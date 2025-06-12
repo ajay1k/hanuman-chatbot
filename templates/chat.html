@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Hanuman Sevak</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        :root {
+            /* A new dark theme color palette */
+            --background-dark: #121826;
+            --container-bg: #1a2233;
+            --header-gradient: linear-gradient(135deg, #ffc107, #ff9800);
+            --user-message-gradient: linear-gradient(45deg, #ff9800, #ff5722);
+            --bot-message-bg: #2a344a;
+            --text-primary: #f0f0f0;
+            --text-secondary: #a0a0a0;
+            --glass-bg: rgba(42, 52, 74, 0.7);
+            --font-family: 'Inter', sans-serif;
+        }
+
+        /* NEW: Fade-in animation for messages */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-dark);
+            /* NEW: Subtle background pattern */
+            background-image: radial-gradient(var(--bot-message-bg) 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        #chat-container {
+            width: 95%; max-width: 700px; height: 95vh; max-height: 850px;
+            background-color: var(--container-bg);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        .header {
+            background: var(--header-gradient);
+            color: white; padding: 20px; text-align: center;
+        }
+        .header h1 { margin: 0; font-size: 1.7em; font-weight: 500; text-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .header a { float: right; color: white; text-decoration: none; font-size: 1.2rem; opacity: 0.8; transition: opacity 0.2s; }
+        .header a:hover { opacity: 1; }
+        
+        #chat-window {
+            flex-grow: 1; padding: 20px 30px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth;
+        }
+
+        .message { display: flex; align-items: flex-start; gap: 15px; max-width: 85%; animation: fadeIn 0.5s ease-out; }
+        .message-content { padding: 12px 18px; border-radius: 18px; line-height: 1.6; }
+        .bot-message { align-self: flex-start; }
+        .user-message { align-self: flex-end; flex-direction: row-reverse; }
+
+        .bot-message .message-content { background-color: var(--bot-message-bg); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .user-message .message-content { background: var(--user-message-gradient); color: white; }
+
+        .avatar {
+            width: 40px; height: 40px; border-radius: 50%; display: flex;
+            justify-content: center; align-items: center; font-size: 1.2rem; flex-shrink: 0;
+            background: var(--header-gradient); color: white;
+        }
+        .user-message .avatar { background: #e0e0e0; color: #333; }
+        
+        .typing-indicator span { background-color: var(--text-secondary); }
+        .typing-indicator { display: flex; align-items: center; gap: 5px; }
+        .typing-indicator span { height: 8px; width: 8px; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing-indicator span:nth-of-type(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-of-type(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+
+        #chat-form-container {
+            padding: 15px 20px;
+            /* NEW: Frosted glass effect */
+            background-color: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #chat-form { display: flex; align-items: center; width: 100%; }
+        #user-input {
+            flex-grow: 1; border: 1px solid transparent; background-color: var(--bot-message-bg);
+            border-radius: 20px; padding: 12px 20px; font-size: 1em; color: var(--text-primary);
+        }
+        #user-input:focus { outline: none; border-color: var(--header-color); }
+        
+        .icon-button {
+            background-color: transparent; color: var(--text-secondary); border: none;
+            border-radius: 50%; width: 45px; height: 45px; margin-left: 8px; cursor: pointer;
+            font-size: 1.3em; display: flex; justify-content: center; align-items: center; transition: all 0.2s;
+        }
+        .icon-button:hover { color: var(--header-color); background-color: var(--bot-message-bg); }
+        #send-button { background-color: var(--header-color); color: white; }
+        #send-button:hover { filter: brightness(1.2); }
+        #mic-button.is-listening { color: #ff5722; }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div class="header">
+            <h1>Hanuman Sevak</h1>
+            <a href="{{ url_for('logout') }}" aria-label="Logout"><i class="fa-solid fa-right-from-bracket"></i></a>
+        </div>
+        <div id="chat-window"></div>
+        <div id="chat-form-container">
+            <form id="chat-form">
+                <input type="text" id="user-input" placeholder="Ask your question..." autocomplete="off">
+                <button type="button" id="mic-button" class="icon-button" aria-label="Use microphone">
+                    <i class="fa-solid fa-microphone-lines"></i>
+                </button>
+                <button type="submit" id="send-button" class="icon-button" aria-label="Send">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const chatForm = document.getElementById("chat-form");
+            const userInput = document.getElementById("user-input");
+            const chatWindow = document.getElementById("chat-window");
+            const micButton = document.getElementById("mic-button");
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition;
+
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
+
+                micButton.addEventListener("click", () => {
+                    micButton.classList.contains('is-listening') ? recognition.stop() : recognition.start();
+                });
+
+                recognition.onstart = () => micButton.classList.add("is-listening");
+                recognition.onend = () => micButton.classList.remove("is-listening");
+                recognition.onerror = (event) => {
+                    console.error("Speech recognition error:", event.error);
+                    micButton.classList.remove("is-listening");
+                };
+                
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    userInput.value = transcript;
+                    document.getElementById("send-button").click();
+                };
+            } else {
+                micButton.style.display = 'none';
+            }
+
+            chatForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                const userMessage = userInput.value.trim();
+                if (userMessage === "") return;
+                processUserMessage(userMessage);
+            });
+            
+            async function processUserMessage(message) {
+                appendMessage(message, "user");
+                userInput.value = "";
+                showTypingIndicator();
+
+                try {
+                    const response = await fetch("{{ url_for('get_chat_response') }}", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ message: message }),
+                    });
+                    if (!response.ok) throw new Error("Network response not ok.");
+                    
+                    const data = await response.json();
+                    removeTypingIndicator();
+                    appendMessage(data.response, "bot");
+                } catch (error) {
+                    removeTypingIndicator();
+                    appendMessage("I apologize, an error occurred.", "bot");
+                }
+            }
+
+            function appendMessage(message, type) {
+                const isUser = type === "user";
+                const messageContainer = document.createElement("div");
+                messageContainer.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+                const avatarIconClass = isUser ? 'fa-solid fa-user' : 'fa-solid fa-hands-praying';
+                messageContainer.innerHTML = `
+                    <div class="avatar"><i class="${avatarIconClass}"></i></div>
+                    <div class="message-content">${message.replace(/\n/g, '<br>')}</div>`;
+                chatWindow.appendChild(messageContainer);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            function showTypingIndicator() {
+                const indicatorHTML = `
+                    <div class="message bot-message" id="typing-indicator">
+                        <div class="avatar"><i class="fa-solid fa-hands-praying"></i></div>
+                        <div class="message-content"><div class="typing-indicator"><span></span><span></span><span></span></div></div>
+                    </div>`;
+                chatWindow.insertAdjacentHTML('beforeend', indicatorHTML);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            function removeTypingIndicator() {
+                const indicator = document.getElementById("typing-indicator");
+                if (indicator) indicator.remove();
+            }
+
+            appendMessage("Jai Sri Ram! The path of devotion is ever bright. How may this humble sevak assist you?", "bot");
+        });
+    </script>
+</body>
+</html>
