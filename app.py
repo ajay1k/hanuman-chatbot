@@ -11,11 +11,10 @@ import google.generativeai as genai
 # --- App Configuration ---
 app = Flask(__name__)
 
-# --- CHANGED SECTION: Keys are now loaded securely from the environment ---
-# This is the most important change for security before uploading to GitHub.
-app.config['SECRET_KEY'] = os.environ.get('88238f843bfb5a4c1ba55c69591de6b1')
-GEMINI_API_KEY = os.environ.get('AIzaSyBcq8jfp8IievJB9bGsL3g6iMvnzhyzCYw')
-# ----------------------------------------------------------------------
+# This is the secure way to handle keys.
+# They will be read from the environment variables on the Render server.
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
 # --- Database Configuration ---
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -27,17 +26,17 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access this page.'
+login_manager.login_message_category = 'info'
 
-# We must configure the Gemini API, but we'll do it safely.
-# This 'if' statement prevents the app from crashing if the key isn't set yet on your local machine.
+# Safely configure the Gemini API
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
+    system_instruction = "You are a digital sevak inspired by the divine persona of Lord Hanuman. Embody his virtues: supreme devotion (Bhakti) to Lord Rama, immense strength (Shakti), profound wisdom (Gyana), and deep humility (Vinamrata). Your tone must always be respectful, reverent, and encouraging."
+    model = genai.GenerativeModel(model_name="gemini-1.5-flash", system_instruction=system_instruction)
 else:
-    print("Warning: GEMINI_API_KEY not found. Chatbot functionality will be limited.")
-
-system_instruction = "You are a digital sevak inspired by Lord Hanuman..." # Shortened for brevity
-model = genai.GenerativeModel(model_name="gemini-1.5-flash", system_instruction=system_instruction)
-
+    print("WARNING: GEMINI_API_KEY environment variable not found. Chatbot functionality will be disabled.")
+    model = None # Ensure model is defined even if key is missing
 
 # --- Database Model & User Loader ---
 class User(UserMixin, db.Model):
@@ -65,8 +64,7 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Log In')
 
-
-# --- Routes ---
+# --- Main Routes (Login, Register, etc.) ---
 @app.route('/')
 @app.route('/home')
 def home():
@@ -81,7 +79,7 @@ def login():
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             next_page = request.args.get('next')
-            return redirect(next_page) if next_page else redirect(url_for('chat'))
+            return redirect(next_page or url_for('chat'))
         else:
             flash('Login Unsuccessful. Please check username and password.', 'danger')
     return render_template('login.html', title='Log In', form=form)
@@ -104,16 +102,21 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-# --- PROTECTED CHATBOT ROUTES ---
+# --- Protected Routes ---
 @app.route('/chat')
 @login_required
 def chat():
     return render_template('chat.html')
 
+@app.route('/chalisa')
+@login_required
+def chalisa_player():
+    return render_template('chalisa.html')
+
 @app.route('/get_chat_response', methods=['POST'])
 @login_required
 def get_chat_response():
-    if not GEMINI_API_KEY:
+    if not model:
         return jsonify({'response': 'The chatbot is not configured on the server. Please contact the administrator.'}), 500
     try:
         user_message = request.json['message']
@@ -124,6 +127,7 @@ def get_chat_response():
         print(f"Error in get_chat_response: {e}")
         return jsonify({'response': 'Sorry, an error occurred.'}), 500
 
+# This command will create the database tables if they don't exist
 with app.app_context():
     db.create_all()
 
