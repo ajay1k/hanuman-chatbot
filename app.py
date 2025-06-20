@@ -11,10 +11,11 @@ import google.generativeai as genai
 # --- App Configuration ---
 app = Flask(__name__)
 
-# For local testing, you can set keys directly. For deployment, these should be environment variables.
 # IMPORTANT: Replace these with your own keys for local testing.
+# For deployment, these should be set as environment variables.
 app.config['SECRET_KEY'] = '89b4fcd0b3373dbd5782d7d1d0f70f6b'
 GEMINI_API_KEY = "AIzaSyBcq8jfp8IievJB9bGsL3g6iMvnzhyzCYw"
+
 # --- Database Configuration ---
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'site.db')
@@ -70,21 +71,21 @@ def home():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated: return redirect(url_for('chat'))
+    if current_user.is_authenticated: return redirect(url_for('chalisa_player'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             next_page = request.args.get('next')
-            return redirect(next_page or url_for('chat'))
+            return redirect(next_page or url_for('chalisa_player'))
         else:
             flash('Login Unsuccessful. Please check username and password.', 'danger')
     return render_template('login.html', title='Log In', form=form)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated: return redirect(url_for('chat'))
+    if current_user.is_authenticated: return redirect(url_for('chalisa_player'))
     form = RegistrationForm()
     if form.validate_on_submit():
         new_user = User(username=form.username.data)
@@ -116,7 +117,7 @@ def chalisa_player():
 @login_required
 def get_chat_response():
     if not model:
-        return jsonify({'response': 'The chatbot is not configured on the server. Please add your API Key.'}), 500
+        return jsonify({'response': 'The chatbot is not configured on the server. Please check your API Key.'}), 500
     try:
         user_message = request.json['message']
         chat_session = model.start_chat(history=[])
