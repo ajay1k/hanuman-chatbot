@@ -11,11 +11,10 @@ import google.generativeai as genai
 # --- App Configuration ---
 app = Flask(__name__)
 
-# This is the secure way to handle keys.
-# They will be read from the environment variables on the Render server.
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-
+# For local testing, you can set keys directly. For deployment, these should be environment variables.
+# IMPORTANT: Replace these with your own keys for local testing.
+app.config['SECRET_KEY'] = '89b4fcd0b3373dbd5782d7d1d0f70f6b'
+GEMINI_API_KEY = "AIzaSyBcq8jfp8IievJB9bGsL3g6iMvnzhyzCYw"
 # --- Database Configuration ---
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'site.db')
@@ -30,15 +29,15 @@ login_manager.login_message = 'Please log in to access this page.'
 login_manager.login_message_category = 'info'
 
 # Safely configure the Gemini API
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
     genai.configure(api_key=GEMINI_API_KEY)
     system_instruction = "You are a digital sevak inspired by the divine persona of Lord Hanuman. Embody his virtues: supreme devotion (Bhakti) to Lord Rama, immense strength (Shakti), profound wisdom (Gyana), and deep humility (Vinamrata). Your tone must always be respectful, reverent, and encouraging."
     model = genai.GenerativeModel(model_name="gemini-1.5-flash", system_instruction=system_instruction)
 else:
-    print("WARNING: GEMINI_API_KEY environment variable not found. Chatbot functionality will be disabled.")
-    model = None # Ensure model is defined even if key is missing
+    print("WARNING: GEMINI_API_KEY not found or is a placeholder. Chatbot functionality will be disabled.")
+    model = None
 
-# --- Database Model & User Loader ---
+# --- Database Model ---
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -64,9 +63,8 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Log In')
 
-# --- Main Routes (Login, Register, etc.) ---
+# --- Routes ---
 @app.route('/')
-@app.route('/home')
 def home():
     return redirect(url_for('login'))
 
@@ -98,6 +96,7 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 @app.route('/logout')
+@login_required
 def logout():
     logout_user()
     return redirect(url_for('login'))
@@ -117,7 +116,7 @@ def chalisa_player():
 @login_required
 def get_chat_response():
     if not model:
-        return jsonify({'response': 'The chatbot is not configured on the server. Please contact the administrator.'}), 500
+        return jsonify({'response': 'The chatbot is not configured on the server. Please add your API Key.'}), 500
     try:
         user_message = request.json['message']
         chat_session = model.start_chat(history=[])
