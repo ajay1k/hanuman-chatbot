@@ -26,10 +26,6 @@
         .user-message .message-content { background: var(--user-message-gradient); color: white; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; flex-shrink: 0; background: var(--header-gradient); color: white; }
         .user-message .avatar { background: #e0e0e0; color: #333; }
-        .typing-indicator { display: flex; align-items: center; gap: 5px; }
-        .typing-indicator span { height: 8px; width: 8px; background-color: var(--text-secondary); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
-        .typing-indicator span:nth-of-type(2) { animation-delay: 0.2s; } .typing-indicator span:nth-of-type(3) { animation-delay: 0.4s; }
-        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
         #chat-form-container { padding: 15px 20px; background-color: var(--glass-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1); }
         #chat-form { display: flex; align-items: center; width: 100%; }
         #user-input { flex-grow: 1; border: 1px solid transparent; background-color: var(--bot-message-bg); border-radius: 20px; padding: 12px 20px; font-size: 1em; color: var(--text-primary); }
@@ -84,7 +80,7 @@
                     document.getElementById("send-button").click();
                 };
             } else {
-                micButton.style.display = 'none';
+                if(micButton) micButton.style.display = 'none';
             }
 
             chatForm.addEventListener("submit", (event) => {
@@ -124,7 +120,7 @@
 
             function showTypingIndicator() {
                 const indicatorHTML = `<div class="message bot-message" id="typing-indicator"><div class="avatar"><i class="fa-solid fa-hands-praying"></i></div><div class="message-content"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>`;
-                chatWindow.insertAdjacentHTML('beforeend', indicatorHTML);
+                if(!document.getElementById('typing-indicator')) chatWindow.insertAdjacentHTML('beforeend', indicatorHTML);
                 chatWindow.scrollTop = chatWindow.scrollHeight;
             }
 
