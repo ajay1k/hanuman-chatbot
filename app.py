@@ -1,5 +1,4 @@
 import os
-import base64
 from datetime import datetime
 from flask import Flask, render_template, flash, redirect, url_for, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -9,13 +8,16 @@ from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
 import google.generativeai as genai
-from PIL import Image
-import io
 
 # --- App Configuration ---
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('89b4fcd0b3373dbd5782d7d1d0f70f6b')
-GEMINI_API_KEY = os.environ.get('AIzaSyBcq8jfp8IievJB9bGsL3g6iMvnzhyzCYw')
+
+# IMPORTANT: For local testing, replace these placeholders with your actual keys.
+# For deployment, these should be set as environment variables.
+app.config['SECRET_KEY'] = '89b4fcd0b3373dbd5782d7d1d0f70f6b' 
+GEMINI_API_KEY = "v AIzaSyBcq8jfp8IievJB9bGsL3g6iMvnzhyzCYw"
+
+# --- Database Configuration ---
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'site.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -24,19 +26,20 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access this page.'
 login_manager.login_message_category = 'info'
 
 # Safely configure Gemini API
 model = None
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
     try:
         genai.configure(api_key=GEMINI_API_KEY)
-        system_instruction = "You are a digital sevak inspired by Lord Hanuman..."
+        system_instruction = "You are a digital sevak inspired by the divine persona of Lord Hanuman. Embody his virtues: supreme devotion (Bhakti) to Lord Rama, immense strength (Shakti), profound wisdom (Gyana), and deep humility (Vinamrata). Your tone must always be respectful, reverent, and encouraging."
         model = genai.GenerativeModel(model_name="gemini-1.5-flash", system_instruction=system_instruction)
     except Exception as e:
         print(f"Error configuring Gemini API: {e}")
 else:
-    print("WARNING: GEMINI_API_KEY environment variable not found.")
+    print("WARNING: GEMINI_API_KEY not found or is a placeholder. Chatbot functionality will be disabled.")
 
 # --- Database Models ---
 class User(UserMixin, db.Model):
@@ -49,7 +52,7 @@ class User(UserMixin, db.Model):
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    sender_type = db.Column(db.String(10), nullable=False)
+    sender_type = db.Column(db.String(10), nullable=False) # 'user' or 'bot'
     message_text = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -72,28 +75,28 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Log In')
 
-# --- Main Routes ---
+# --- Routes ---
 @app.route('/')
 def home():
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated: return redirect(url_for('chat'))
+    if current_user.is_authenticated: return redirect(url_for('chalisa_player'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
-            return redirect(url_for('chat'))
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('chalisa_player'))
         else:
             flash('Login Unsuccessful. Please check username and password.', 'danger')
     return render_template('login.html', title='Log In', form=form)
 
-# ... (Register and Logout routes remain the same)
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated: return redirect(url_for('chat'))
+    if current_user.is_authenticated: return redirect(url_for('chalisa_player'))
     form = RegistrationForm()
     if form.validate_on_submit():
         new_user = User(username=form.username.data)
@@ -111,71 +114,22 @@ def logout():
     return redirect(url_for('login'))
 
 # --- Protected Routes ---
-@app.route('/chalisa')
-@login_required
-def chalisa_player():
-    return render_template('chalisa.html')
-
 @app.route('/chat')
 @login_required
 def chat():
     past_messages = ChatMessage.query.filter_by(author=current_user).order_by(ChatMessage.timestamp).all()
     return render_template('chat.html', past_messages=past_messages)
 
-# --- NEW: Gemini API Routes ---
-
-@app.route('/get_prasad', methods=['POST'])
+@app.route('/chalisa')
 @login_required
-def get_prasad():
-    """Generates a spiritual thought for the day."""
-    if not model:
-        return jsonify({'response': 'Chatbot is not configured.'}), 500
-    try:
-        prompt = "In the persona of Hanuman's sevak, provide a short, one-sentence spiritual quote or 'thought for the day' based on Bhakti Yoga. Make it encouraging and easy to understand."
-        response = model.generate_content(prompt)
-        return jsonify({'response': response.text})
-    except Exception as e:
-        print(f"Error in get_prasad: {e}")
-        return jsonify({'response': 'Sorry, an error occurred.'}), 500
-
-
-@app.route('/identify_image', methods=['POST'])
-@login_required
-def identify_image():
-    """Identifies an uploaded image."""
-    if not model:
-        return jsonify({'response': 'Chatbot is not configured for image analysis.'}), 500
-    
-    data = request.json
-    image_data_url = data.get('image_data')
-
-    if not image_data_url:
-        return jsonify({'response': 'No image data received.'}), 400
-
-    try:
-        # Decode the Base64 image data
-        header, encoded = image_data_url.split(",", 1)
-        image_bytes = base64.b64decode(encoded)
-        image = Image.open(io.BytesIO(image_bytes))
-
-        prompt = "In the persona of Hanuman's sevak, please identify the deity or symbol in this image within the context of Hindu dharma. Describe its significance in one or two short sentences."
-        
-        # Make a multimodal request to the Gemini API
-        response = model.generate_content([prompt, image])
-        
-        return jsonify({'response': response.text})
-    except Exception as e:
-        print(f"Error in identify_image: {e}")
-        return jsonify({'response': 'Sorry, I could not analyze the image.'}), 500
-
+def chalisa_player():
+    return render_template('chalisa.html')
 
 @app.route('/get_chat_response', methods=['POST'])
 @login_required
 def get_chat_response():
-    # This existing function is updated to use the same logic
-    # It now saves messages to the database
     if not model:
-        return jsonify({'response': 'Chatbot is not configured.'}), 500
+        return jsonify({'response': 'The chatbot is not configured on the server. Please check your API Key.'}), 500
     
     user_message_text = request.json['message']
     user_message_db = ChatMessage(sender_type='user', message_text=user_message_text, author=current_user)
@@ -194,6 +148,7 @@ def get_chat_response():
         print(f"Error in get_chat_response: {e}")
         return jsonify({'response': 'Sorry, an error occurred.'}), 500
 
+# This command will create the database tables if they don't exist
 with app.app_context():
     db.create_all()
 
