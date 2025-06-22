@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% block title %}Hanuman Chalisa{% endblock %}
+{% block header_links %}
+    <a href="{{ url_for('chat') }}" class="text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Back to Chat</a>
+     <a href="{{ url_for('login') }}" class="logout-link text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Logout</a>
+{% endblock %}
+{% block content %}
+    <div class="relative">
+        <video class="background-video fixed top-0 left-0 w-full h-full object-cover z-[-2] brightness-75" autoplay loop muted playsinline preload="auto" aria-hidden="true">
+            <source src="{{ url_for('static', filename='videos/hanuman-bg.mp4') }}" type="video/mp4">
+            <div class="video-fallback fixed top-0 left-0 w-full h-full z-[-2] bg-gradient-to-br from-[var(--background)] to-[var(--secondary)]"></div>
+        </video>
+        <div class="video-overlay fixed top-0 left-0 w-full h-full bg-[var(--glass-bg)] backdrop-filter-blur-sm z-[-1]"></div>
+        <canvas id="particle-canvas" class="fixed top-0 left-0 w-full h-full z-[-1]" aria-hidden="true"></canvas>
+    </div>
+    <div class="mb-6">
+        <audio id="chalisa-audio" controls class="w-full neumo rounded-lg" aria-label="Hanuman Chalisa audio player">
+            <source src="{{ url_for('static', filename='music/hanuman_chalisa.mp3') }}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        <canvas id="audio-visualizer" class="w-full h-16 mt-4 rounded-lg bg-[var(--glass-bg)] backdrop-filter-blur-sm" aria-hidden="true"></canvas>
+    </div>
+    <div class="mb-6 text-center">
+        <img src="{{ url_for('static', filename='images/hanuman.jpg') }}" alt="Lord Hanuman" class="parallax-img w-full max-w-sm mx-auto rounded-lg shadow-md transition-transform duration-300" loading="lazy">
+    </div>
+    <div class="text-center chalisa-text text-[var(--text)] leading-relaxed font-medium mb-6">
+        <p>श्रीगुरु चरन सरोज रज निज मनु मुकुरु सुधारि।</p>
+        <p>बरनउँ रघुबर बिमल जसु जो दायकु फल चारि।</p>
+        <p>बुद्धिहीन तनु जानिके सुमिरौ पवन कुमार।</p>
+        <p>बल बुद्धि बिद्या देहु मोहि हरहु कलेस बिकार।</p>
+        <p>पवन तनय संकट हरन मंगल मूरति रूप।</p>
+        <p>राम लखन सीता सहित हृदय बसहु सुर भूप।</p>
+    </div>
+    <div class="text-center">
+        <button id="query-button" class="btn-primary bg-[var(--primary)] text-white py-2 px-4 sm:px-6 rounded-lg btn-cta hover:bg-[var(--secondary)] focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition duration-200" aria-label="Ask a question">Ask a Question</button>
+    </div>
+    <div id="query-modal" class="modal hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-70" role="dialog" aria-labelledby="query-title" aria-hidden="true">
+        <div class="glass p-8 max-w-md w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="query-title" class="text-xl modal-title text-[var(--primary)]">Hanuman Sevak</h3>
+                <button id="modal-close" class="modal-close text-[var(--text)] hover:text-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" aria-label="Close modal">×</button>
+            </div>
+            <form id="query-form" class="space-y-6">
+                <div class="relative tooltip-target">
+                    <input type="text" id="query-input" class="block w-full px-4 py-3 neumo border border-[var(--primary)]/30 rounded-lg text-[var(--text)] focus:ring-[var(--primary)] focus:border-[var(--primary)] transition duration-200" placeholder="Your query..." aria-label="Query input" autocomplete="off">
+                    <ul id="autocomplete-list" class="absolute z-10 w-full mt-1 glass rounded-lg shadow-lg hidden" aria-live="polite"></ul>
+                    <span class="tooltip absolute -top-10 left-0 glass text-[var(--text)] text-xs p-2 rounded shadow-lg">Ask about Hanuman Chalisa</span>
+                </div>
+                <div id="query-history" class="space-y-2 hidden">
+                    <p class="text-sm text-[var(--text)]">Recent Queries:</p>
+                    <ul id="history-list" class="text-sm text-[var(--text)]"></ul>
+                </div>
+                <button type="submit" class="w-full bg-[var(--primary)] text-white py-3 px-4 rounded-lg btn-cta hover:bg-[var(--secondary)] focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition duration-200 relative">
+                    <span>Ask</span>
+                    <span id="loading-spinner" class="absolute inset-0 flex items-center justify-center hidden">
+                        <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                    </span>
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+{% block additional_scripts %}
+    <script defer>
+        // Lazy-load Three.js
+        async function loadThreeJS() {
+            try {
+                const { Scene, PerspectiveCamera, WebGLRenderer, Points, BufferGeometry, PointsMaterial, BufferAttribute } = await import('https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js');
+                return { Scene, PerspectiveCamera, WebGLRenderer, Points, BufferGeometry, PointsMaterial, BufferAttribute };
+            } catch (e) {
+                console.error('Failed to load Three.js:', e);
+                return null;
+            }
+        }
+
+        // Initialize WebGL particle system
+        async function initParticles() {
+            const canvas = document.getElementById('particle-canvas');
+            if (!canvas) {
+                console.warn('Particle canvas not found');
+                return;
+            }
+
+            try {
+                const three = await loadThreeJS();
+                if (!three) return;
+                const { Scene, PerspectiveCamera, WebGLRenderer, Points, BufferGeometry, PointsMaterial, BufferAttribute } = three;
+                if (!canvas.getContext('webgl') && !canvas.getContext('experimental-webgl')) {
+                    console.warn('WebGL not supported, skipping particle system');
+                    return;
+                }
+
+                const scene = new Scene();
+                const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                const renderer = new WebGLRenderer({ canvas, alpha: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+                const particleCount = window.innerWidth < 768 ? 500 : 1000;
+                const vertices = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+                const sizes = new Float32Array(particleCount);
+
+                for (let i = 0; i < particleCount; i++) {
+                    vertices[i * 3] = (Math.random() - 0.5) * 100;
+                    vertices[i * 3 + 1] = (Math.random() - 0.5) * 100;
+                    vertices[i * 3 + 2] = (Math.random() - 0.5) * 100;
+                    colors[i * 3] = 0.482; // R (from #7B1FA2)
+                    colors[i * 3 + 1] = 0.122; // G
+                    colors[i * 3 + 2] = 0.635; // B
+                    sizes[i] = Math.random() * 2 + 1;
+                }
+
+                const geometry = new BufferGeometry();
+                geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+                geometry.setAttribute('color', new BufferAttribute(colors, 3));
+                geometry.setAttribute('size', new BufferAttribute(sizes, 1));
+
+                const material = new PointsMaterial({ vertexColors: true, size: 2, transparent: true, opacity: 0.7 });
+                const particles = new Points(geometry, material);
+                scene.add(particles);
+
+                camera.position.z = 50;
+
+                let mouseX = 0, mouseY = 0;
+                document.addEventListener('mousemove', (e) => {
+                    mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+                    mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+                });
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    particles.rotation.y += 0.001;
+                    particles.rotation.x += 0.001;
+                    particles.position.x = mouseX * 5;
+                    particles.position.y = mouseY * 5;
+                    renderer.render(scene, camera);
+                }
+                animate();
+
+                window.addEventListener('resize', () => {
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                });
+            } catch (e) {
+                console.error('Failed to initialize particle system:', e);
+            }
+        }
+
+        // Initialize audio visualizer
+        function initAudioVisualizer() {
+            const audio = document.getElementById('chalisa-audio');
+            const canvas = document.getElementById('audio-visualizer');
+            if (!audio || !canvas) return;
+
+            try {
+                const ctx = canvas.getContext('2d');
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const analyser = audioCtx.createAnalyser();
+                const source = audioCtx.createMediaElementSource(audio);
+                source.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                analyser.fftSize = 256;
+
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+
+                function drawVisualizer() {
+                    requestAnimationFrame(drawVisualizer);
+                    analyser.getByteFrequencyData(dataArray);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    const barWidth = canvas.width / bufferLength;
+                    for (let i = 0; i < bufferLength; i++) {
+                        const barHeight = (dataArray[i] / 255) * canvas.height;
+                        ctx.fillStyle = `hsl(${i * 2}, 70%, 50%)`;
+                        ctx.fillRect(i * barWidth, canvas.height - barHeight, barWidth, barHeight);
+                    }
+                }
+
+                const observer = new IntersectionObserver((entries) => {
+                    if (entries[0].isIntersecting) {
+                        drawVisualizer();
+                        observer.disconnect();
+                    }
+                });
+                observer.observe(canvas);
+            } catch (e) {
+                console.error('Failed to initialize audio visualizer:', e);
+            }
+        }
+
+        // Autocomplete suggestions
+        const suggestions = [
+            'Meaning of Hanuman Chalisa verse',
+            'Benefits of chanting Hanuman Chalisa',
+            'History of Hanuman Chalisa',
+            'How to chant Hanuman Chalisa correctly',
+            'Hanuman Chalisa in Hindi'
+        ];
+
+        // Initialize advanced features
+        if (typeof gsap !== 'undefined') {
+            gsap.registerPlugin(ScrollTrigger);
+            const tl = gsap.timeline();
+            tl.from(".parallax-img", { scale: 0.8, opacity: 0, duration: 1.5, ease: "power4.out" })
+              .from(".chalisa-text p", { y: 30, opacity: 0, duration: 0.8, stagger: 0.2, ease: "power3.out" }, "-=0.5")
+              .from("#query-button", { scale: 0, opacity: 0, duration: 0.5, ease: "back.out(1.7)" }, "-=0.3");
+        } else {
+            console.warn('GSAP not loaded, animations disabled');
+            document.querySelectorAll('.parallax-img, .chalisa-text p, #query-button, .background-video').forEach(el => {
+                el.style.opacity = 1;
+                el.style.transform = 'none';
+            });
+        }
+
+        const queryModal = document.getElementById('query-modal');
+        const queryButton = document.getElementById('query-button');
+        const modalClose = document.getElementById('modal-close');
+        const queryForm = document.getElementById('query-form');
+        const queryInput = document.getElementById('query-input');
+        const autocompleteList = document.getElementById('autocomplete-list');
+        const queryHistory = document.getElementById('query-history');
+        const historyList = document.getElementById('history-list');
+        const loadingSpinner = document.getElementById('loading-spinner');
+
+        // Load query history
+        function loadQueryHistory() {
+            const history = JSON.parse(localStorage.getItem('queryHistory') || '[]');
+            if (history.length) {
+                queryHistory.classList.remove('hidden');
+                historyList.innerHTML = history.map(query => `<li class="cursor-pointer hover:text-[var(--primary)]" role="option">${query}</li>`).join('');
+                historyList.querySelectorAll('li').forEach(item => {
+                    item.addEventListener('click', () => {
+                        queryInput.value = item.textContent;
+                        autocompleteList.classList.add('hidden');
+                    });
+                });
+            }
+        }
+
+        // Save query to history
+        function saveQuery(query) {
+            let history = JSON.parse(localStorage.getItem('queryHistory') || '[]');
+            history = [query, ...history.filter(q => q !== query)].slice(0, 5);
+            localStorage.setItem('queryHistory', JSON.stringify(history));
+            loadQueryHistory();
+        }
+
+        // Autocomplete logic
+        queryInput?.addEventListener('input', () => {
+            const value = queryInput.value.toLowerCase();
+            if (!value) {
+                autocompleteList.classList.add('hidden');
+                return;
+            }
+            const filtered = suggestions.filter(s => s.toLowerCase().includes(value));
+            autocompleteList.innerHTML = filtered.map(s => `<li class="px-4 py-2 cursor-pointer hover:bg-[var(--primary)]/20" role="option">${s}</li>`).join('');
+            autocompleteList.classList.toggle('hidden', !filtered.length);
+            autocompleteList.querySelectorAll('li').forEach(item => {
+                item.addEventListener('click', () => {
+                    queryInput.value = item.textContent;
+                    autocompleteList.classList.add('hidden');
+                });
+            });
+        });
+
+        queryInput?.addEventListener('keydown', (e) => {
+            const items = autocompleteList.querySelectorAll('li');
+            if (!items.length) return;
+            const active = document.activeElement;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const next = active.nextElementSibling || items[0];
+                next.focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prev = active.previousElementSibling || items[items.length - 1];
+                prev.focus();
+            } else if (e.key === 'Enter' && active.tagName === 'LI') {
+                e.preventDefault();
+                queryInput.value = active.textContent;
+                autocompleteList.classList.add('hidden');
+                queryInput.focus();
+            }
+        });
+
+        queryButton?.addEventListener('click', () => {
+            queryModal.classList.remove('hidden');
+            queryModal.setAttribute('aria-hidden', 'false');
+            queryInput.focus();
+            loadQueryHistory();
+            if (typeof gsap !== 'undefined') {
+                gsap.from("#query-modal .glass", { 
+                    scale: 0.9, 
+                    opacity: 0, 
+                    duration: 0.5, 
+                    ease: "elastic.out(1, 0.5)" 
+                });
+            }
+        });
+
+        modalClose?.addEventListener('click', () => {
+            if (typeof gsap !== 'undefined') {
+                gsap.to("#query-modal .glass", { 
+                    scale: 0.9, 
+                    opacity: 0, 
+                    duration: 0.3, 
+                    ease: "power2.in", 
+                    onComplete: () => {
+                        queryModal.classList.add('hidden');
+                        queryModal.setAttribute('aria-hidden', 'true');
+                        autocompleteList.classList.add('hidden');
+                    }
+                });
+            } else {
+                queryModal.classList.add('hidden');
+                queryModal.setAttribute('aria-hidden', 'true');
+                autocompleteList.classList.add('hidden');
+            }
+        });
+
+        queryForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = queryInput.value.trim();
+            if (!query) return;
+            
+            loadingSpinner.classList.remove('hidden');
+            queryForm.querySelector('button span:first-child').classList.add('invisible');
+            
+            try {
+                const response = await fetch('/get_chat_response', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: query })
+                });
+                const data = await response.json();
+                alert(`Hanuman Sevak: ${data.response}`);
+                saveQuery(query);
+                queryInput.value = '';
+                modalClose.click();
+            } catch (e) {
+                console.error('Query error:', e);
+                alert('Error communicating with Hanuman Sevak. Please try again.');
+            } finally {
+                loadingSpinner.classList.add('hidden');
+                queryForm.querySelector('button span:first-child').classList.remove('invisible');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !queryModal.classList.contains('hidden')) {
+                modalClose.click();
+            }
+        });
+
+        // Error handling for static assets
+        document.querySelectorAll('img, video source, audio source').forEach(el => {
+            el.addEventListener('error', () => {
+                console.error(`Failed to load asset: ${el.src}`);
+                const errorMessage = document.createElement('p');
+                errorMessage.className = 'text-red-600 text-sm mt-1 text-center';
+                errorMessage.setAttribute('role', 'alert');
+                errorMessage.textContent = 'Failed to load media. Please check your connection or file path.';
+                
+                if (el.tagName === 'VIDEO' || el.parentElement.tagName === 'VIDEO') {
+                    el.closest('.background-video').style.display = 'none';
+                    document.querySelector('.video-fallback').style.display = 'block';
+                    document.querySelector('.video-overlay').style.background = 'linear-gradient(135deg, var(--background), var(--secondary))';
+                    document.body.appendChild(errorMessage);
+                    setTimeout(() => errorMessage.remove(), 5000);
+                } else {
+                    el.parentElement.style.display = 'none';
+                    el.parentElement.insertAdjacentElement('afterend', errorMessage);
+                    setTimeout(() => errorMessage.remove(), 5000);
+                }
+            });
+        });
+
+        // Initialize advanced features
+        initParticles();
+        initAudioVisualizer();
+    </script>
+{% endblock %}

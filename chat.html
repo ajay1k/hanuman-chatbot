@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Chat with Hanuman Sevak{% endblock %}
+{% block header_links %}
+    <a href="{{ url_for('chalisa_player') }}" class="text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Hanuman Chalisa</a>
+    <a href="{{ url_for('terms') }}" class="text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Terms of Use</a>
+    <a href="{{ url_for('privacy') }}" class="text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Privacy Policy</a>
+    <a href="#" class="logout-link text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Logout</a>
+{% endblock %}
+{% block content %}
+    <div class="glass p-6 sm:p-8">
+        <h2 class="text-2xl sm:text-3xl font-playfair text-[var(--primary)] mb-6 text-center">🕉️ Hanuman Sevak</h2>
+        <div id="chat-container" class="space-y-4 max-h-[60vh] overflow-y-auto mb-6">
+            {% for msg in past_messages %}
+                <div class="chat-message {% if msg.sender_type == 'bot' %}bg-[var(--primary)]/10{% else %}bg-[var(--secondary)]/10{% endif %} p-4 rounded-lg neumo">
+                    <p class="text-[var(--text)]">
+                        {% if msg.sender_type == 'bot' %}🕉️{% endif %}
+                        {{ msg.message_text | safe }}
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+        <form id="chat-form" class="space-y-4">
+            <div class="relative tooltip-target">
+                <input type="text" id="chat-input" class="block w-full px-4 py-3 neumo border border-[var(--primary)]/30 rounded-lg text-[var(--text)] focus:ring-[var(--primary)] focus:border-[var(--primary)] transition duration-200" placeholder="Share your spiritual thoughts" aria-label="Chat input">
+                <span class="tooltip absolute -top-10 left-0 glass text-[var(--text)] text-xs p-2 rounded shadow-lg">Ask about Hanuman or spirituality</span>
+            </div>
+            <button type="submit" class="w-full bg-[var(--primary)] text-white py-3 px-4 rounded-lg btn-cta hover:bg-[var(--secondary)] focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition duration-200 relative">
+                <span>Send</span>
+                <span id="chat-loading" class="absolute inset-0 flex items-center justify-center hidden">
+                    <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                </span>
+            </button>
+        </form>
+    </div>
+{% endblock %}
+{% block additional_scripts %}
+    <script defer>
+        document.getElementById('chat-button').style.display = 'none';
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatContainer = document.getElementById('chat-container');
+        const chatLoading = document.getElementById('chat-loading');
+
+        if (typeof gsap !== 'undefined') {
+            gsap.from(".chat-message", { 
+                y: 20, 
+                opacity: 0, 
+                duration: 0.5, 
+                stagger: 0.1, 
+                ease: "power3.out" 
+            });
+        }
+
+        chatForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            chatLoading.classList.remove('hidden');
+            chatForm.querySelector('button span:first-child').classList.add('invisible');
+
+            try {
+                const response = await fetch('/get_chat_response', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const data = await response.json();
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'chat-message bg-[var(--secondary)]/10 p-4 rounded-lg neumo';
+                messageDiv.innerHTML = `<p class="text-[var(--text)]">${message}</p>`;
+                chatContainer.appendChild(messageDiv);
+                const botDiv = document.createElement('div');
+                botDiv.className = 'chat-message bg-[var(--primary)]/10 p-4 rounded-lg neumo';
+                botDiv.innerHTML = `<p class="text-[var(--text)]">🕉️ ${data.response}</p>`;
+                chatContainer.appendChild(botDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                if (typeof gsap !== 'undefined') {
+                    gsap.from([messageDiv, botDiv], { 
+                        y: 20, 
+                        opacity: 0, 
+                        duration: 0.5, 
+                        ease: "power3.out" 
+                    });
+                }
+                chatInput.value = '';
+            } catch (e) {
+                console.error('Chat error:', e);
+                alert('Error sending message. Please try again.');
+            } finally {
+                chatLoading.classList.add('hidden');
+                chatForm.querySelector('button span:first-child').classList.remove('invisible');
+            }
+        });
+
+        chatInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    if (typeof gsap !== 'undefined') {
+                        gsap.from(entry.target, { 
+                            y: 20, 
+                            opacity: 0, 
+                            duration: 0.5, 
+                            ease: "power3.out" 
+                        });
+                    }
+                }
+            });
+        });
+        document.querySelectorAll('.chat-message').forEach(msg => observer.observe(msg));
+    </script>
+{% endblock %}
