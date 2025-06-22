@@ -1,390 +1,198 @@
-{% extends "base.html" %}
-{% block title %}Hanuman Chalisa{% endblock %}
-{% block header_links %}
-    <a href="{{ url_for('chat') }}" class="text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Back to Chat</a>
-     <a href="{{ url_for('login') }}" class="logout-link text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Logout</a>
-{% endblock %}
-{% block content %}
-    <div class="relative">
-        <video class="background-video fixed top-0 left-0 w-full h-full object-cover z-[-2] brightness-75" autoplay loop muted playsinline preload="auto" aria-hidden="true">
-            <source src="{{ url_for('static', filename='videos/hanuman-bg.mp4') }}" type="video/mp4">
-            <div class="video-fallback fixed top-0 left-0 w-full h-full z-[-2] bg-gradient-to-br from-[var(--background)] to-[var(--secondary)]"></div>
-        </video>
-        <div class="video-overlay fixed top-0 left-0 w-full h-full bg-[var(--glass-bg)] backdrop-filter-blur-sm z-[-1]"></div>
-        <canvas id="particle-canvas" class="fixed top-0 left-0 w-full h-full z-[-1]" aria-hidden="true"></canvas>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hanuman Chalisa Player</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        :root { --chalisa-primary: #800000; --chalisa-accent: #ff9933; --chalisa-bg: #1a1a1a; --font-serif: 'Noto Serif Devanagari', serif; --font-sans: 'Inter', sans-serif;}
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-serif); min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; padding: 40px 10px; color: var(--chalisa-primary); background: var(--chalisa-bg); overflow-x: hidden; }
+        video { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; opacity: 0.92; }
+        .main-container { margin-top: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; z-index: 2; background: rgba(255, 245, 230, 0.25); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: 55px; padding: 15px; max-width: 500px; width: 95%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35); animation: fadeIn 1.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
+        .om-logo::before { content: '🕉'; font-size: 3.2em; color: var(--chalisa-accent); text-shadow: 0 0 12px rgba(255, 153, 51, 0.8); animation: glow 2.5s ease-in-out infinite alternate; }
+        @keyframes glow { to { text-shadow: 0 0 18px rgba(255, 153, 51, 1); } }
+        h1 { font-size: 2.3em; font-weight: 700; margin: 15px 0; }
+        .audio-player { margin: 15px 0; }
+        .custom-audio-controls { display: flex; align-items: center; gap: 12px; background: rgba(255, 245, 230, 0.3); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: 10px 18px; border-radius: 35px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 153, 51, 0.3); }
+        .icon-btn { width: 50px; height: 50px; border-radius: 15px; color: #fff5e6; border: none; font-size: 1.6em; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); transition: transform 0.2s; }
+        .play-pause-button { background: linear-gradient(145deg, #ff9933, #800000); }
+        .play-pause-button:hover { transform: scale(1.1); }
+        .progress-bar { flex-grow: 1; height: 5px; background: rgba(255, 245, 230, 0.4); border-radius: 3px; overflow: hidden; cursor: pointer; max-width: 200px; border: 1px solid rgba(128, 0, 0, 0.2); }
+        .progress { height: 100%; background: linear-gradient(90deg, #ff9933, #800000); width: 0; border-radius: 3px; }
+        .lyrics { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1; text-align: center; font-size: 1.6em; line-height: 1.9; background: rgba(255, 245, 230, 0.25); backdrop-filter: blur(1px); -webkit-backdrop-filter: blur(1px); padding: 10px; border-radius: 10px; min-height: 80px; max-width: 90%; width: auto; }
+        .lyrics span { display: none; animation: lyricFade 0.6s ease-in-out; }
+        .lyrics span.highlight { display: block; }
+        @keyframes lyricFade { from { opacity: 0; } to { opacity: 1; } }
+        .video-error { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url("{{ url_for('static', filename='hanuman-bg.jpg') }}") no-repeat center/cover fixed; z-index: -1; }
+        .back-button { color: white; position: fixed; top: 20px; left: 20px; text-decoration: none; font-size: 1.5rem; z-index: 1000; transition: transform 0.2s; }
+        .back-button:hover { transform: scale(1.1); }
+        .chat-bubble { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: linear-gradient(135deg, #ffc107, #ff9800); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s ease-in-out; z-index: 999; }
+        .chat-bubble:hover { transform: scale(1.1); }
+        .chat-widget { position: fixed; bottom: 100px; right: 30px; width: 90%; max-width: 400px; height: 70vh; max-height: 600px; background-color: #1a2233; border-radius: 20px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); display: flex; flex-direction: column; overflow: hidden; z-index: 998; transform: translateY(20px) scale(0.95); opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+        .chat-widget.visible { transform: translateY(0) scale(1); opacity: 1; visibility: visible; }
+        .chat-widget .header { background: linear-gradient(135deg, #ffc107, #ff9800); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .chat-widget .header h2 { font-family: var(--font-sans); font-size: 1.2em; margin: 0; }
+        .chat-widget .header .close-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+        .chat-widget #chat-window { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; font-family: var(--font-sans); }
+        .chat-widget .message { display: flex; align-items: flex-start; gap: 10px; max-width: 85%; font-size: 0.9em; animation: fadeIn 0.5s ease-out; }
+        .chat-widget .message-content { padding: 10px 15px; border-radius: 18px; line-height: 1.5; word-wrap: break-word; }
+        .chat-widget .bot-message { align-self: flex-start; }
+        .chat-widget .user-message { align-self: flex-end; flex-direction: row-reverse; }
+        .chat-widget .bot-message .message-content { background-color: #2a344a; color: #f0f0f0; }
+        .chat-widget .user-message .message-content { background: linear-gradient(45deg, #ff9800, #ff5722); color: white; }
+        .chat-widget .avatar { display: none; }
+        .chat-widget #chat-form-container { padding: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .chat-widget #chat-form { display: flex; gap: 10px; }
+        .chat-widget #chat-input { flex-grow: 1; border: none; background-color: #2a344a; border-radius: 20px; padding: 10px 15px; font-size: 1em; color: #f0f0f0; font-family: var(--font-sans); }
+        .chat-widget #send-button { background-color: #ff9800; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; flex-shrink: 0; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="top-nav">
+        <a href="{{ url_for('chat') }}" aria-label="Back to Chat"><i class="fas fa-arrow-left"></i></a>
+        <a href="{{ url_for('logout') }}" aria-label="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
-    <div class="mb-6">
-        <audio id="chalisa-audio" controls class="w-full neumo rounded-lg" aria-label="Hanuman Chalisa audio player">
-            <source src="{{ url_for('static', filename='music/hanuman_chalisa.mp3') }}" type="audio/mpeg">
-            Your browser does not support the audio element.
-        </audio>
-        <canvas id="audio-visualizer" class="w-full h-16 mt-4 rounded-lg bg-[var(--glass-bg)] backdrop-filter-blur-sm" aria-hidden="true"></canvas>
-    </div>
-    <div class="mb-6 text-center">
-        <img src="{{ url_for('static', filename='images/hanuman.jpg') }}" alt="Lord Hanuman" class="parallax-img w-full max-w-sm mx-auto rounded-lg shadow-md transition-transform duration-300" loading="lazy">
-    </div>
-    <div class="text-center chalisa-text text-[var(--text)] leading-relaxed font-medium mb-6">
-        <p>श्रीगुरु चरन सरोज रज निज मनु मुकुरु सुधारि।</p>
-        <p>बरनउँ रघुबर बिमल जसु जो दायकु फल चारि।</p>
-        <p>बुद्धिहीन तनु जानिके सुमिरौ पवन कुमार।</p>
-        <p>बल बुद्धि बिद्या देहु मोहि हरहु कलेस बिकार।</p>
-        <p>पवन तनय संकट हरन मंगल मूरति रूप।</p>
-        <p>राम लखन सीता सहित हृदय बसहु सुर भूप।</p>
-    </div>
-    <div class="text-center">
-        <button id="query-button" class="btn-primary bg-[var(--primary)] text-white py-2 px-4 sm:px-6 rounded-lg btn-cta hover:bg-[var(--secondary)] focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition duration-200" aria-label="Ask a question">Ask a Question</button>
-    </div>
-    <div id="query-modal" class="modal hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-70" role="dialog" aria-labelledby="query-title" aria-hidden="true">
-        <div class="glass p-8 max-w-md w-full">
-            <div class="flex justify-between items-center mb-6">
-                <h3 id="query-title" class="text-xl modal-title text-[var(--primary)]">Hanuman Sevak</h3>
-                <button id="modal-close" class="modal-close text-[var(--text)] hover:text-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" aria-label="Close modal">×</button>
+
+    <video autoplay muted loop id="background-video" preload="auto">
+        <source src="{{ url_for('static', filename='hanuman.mp4') }}" type="video/mp4">
+    </video>
+    <div class="video-error" id="videoError"></div>
+    <div class="main-container">
+        <div class="om-logo"></div>
+        <h1>Hanuman Chalisa</h1>
+        <div class="audio-player">
+            <audio id="hanumanAudio" preload="auto" src="{{ url_for('static', filename='hanuman-chalisa.mp3') }}"></audio>
+            <div class="custom-audio-controls">
+                <button id="playPauseButton" class="icon-btn play-pause-button"><i class="fas fa-play"></i></button>
+                <div class="progress-bar" id="progressBar"><div class="progress" id="progress"></div></div>
             </div>
-            <form id="query-form" class="space-y-6">
-                <div class="relative tooltip-target">
-                    <input type="text" id="query-input" class="block w-full px-4 py-3 neumo border border-[var(--primary)]/30 rounded-lg text-[var(--text)] focus:ring-[var(--primary)] focus:border-[var(--primary)] transition duration-200" placeholder="Your query..." aria-label="Query input" autocomplete="off">
-                    <ul id="autocomplete-list" class="absolute z-10 w-full mt-1 glass rounded-lg shadow-lg hidden" aria-live="polite"></ul>
-                    <span class="tooltip absolute -top-10 left-0 glass text-[var(--text)] text-xs p-2 rounded shadow-lg">Ask about Hanuman Chalisa</span>
-                </div>
-                <div id="query-history" class="space-y-2 hidden">
-                    <p class="text-sm text-[var(--text)]">Recent Queries:</p>
-                    <ul id="history-list" class="text-sm text-[var(--text)]"></ul>
-                </div>
-                <button type="submit" class="w-full bg-[var(--primary)] text-white py-3 px-4 rounded-lg btn-cta hover:bg-[var(--secondary)] focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition duration-200 relative">
-                    <span>Ask</span>
-                    <span id="loading-spinner" class="absolute inset-0 flex items-center justify-center hidden">
-                        <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                        </svg>
-                    </span>
-                </button>
+        </div>
+    </div>
+    <div class="lyrics" id="lyrics">
+        <span>श्रीगुरु चरन सरोज रज निज मनु मुकुरु सुधारि। बरनउँ रघुबर बिमल जसु जो दायकु फल चारि।</span>
+        <span>बुद्धिहीन तनु जानिके सुमिरौ पवन कुमार। बल बुद्धि बिद्या देहु मोहि हरहु कलेस बिकार।</span>
+        <span>पवन तनय संकट हरन मंगल मूरति रूप। राम लखन सीता सहित हृदय बसहु सुर भूप।</span>
+    </div>
+
+    <div class="chat-bubble" id="chat-bubble"><i class="fa-solid fa-comment-dots"></i></div>
+    <div class="chat-widget" id="chat-widget">
+        <div class="header">
+            <h2>Hanuman Sevak</h2>
+            <button class="close-btn" id="close-chat-widget">&times;</button>
+        </div>
+        <div id="chat-window"></div>
+        <div id="chat-form-container">
+            <form id="chat-form">
+                <input type="text" id="chat-input" placeholder="Ask a question..." autocomplete="off">
+                <button type="submit" id="send-button" class="icon-button"><i class="fa-solid fa-paper-plane"></i></button>
             </form>
         </div>
     </div>
-{% endblock %}
-{% block additional_scripts %}
-    <script defer>
-        // Lazy-load Three.js
-        async function loadThreeJS() {
-            try {
-                const { Scene, PerspectiveCamera, WebGLRenderer, Points, BufferGeometry, PointsMaterial, BufferAttribute } = await import('https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js');
-                return { Scene, PerspectiveCamera, WebGLRenderer, Points, BufferGeometry, PointsMaterial, BufferAttribute };
-            } catch (e) {
-                console.error('Failed to load Three.js:', e);
-                return null;
-            }
-        }
 
-        // Initialize WebGL particle system
-        async function initParticles() {
-            const canvas = document.getElementById('particle-canvas');
-            if (!canvas) {
-                console.warn('Particle canvas not found');
-                return;
-            }
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // --- CHALISA PLAYER ELEMENTS ---
+        const audio = document.getElementById('hanumanAudio');
+        const lyricsContainer = document.getElementById('lyrics');
+        const lyricSpans = Array.from(lyricsContainer.getElementsByTagName('span'));
+        const progressBar = document.getElementById('progressBar');
+        const progress = document.getElementById('progress');
+        const playPauseButton = document.getElementById('playPauseButton');
+        // IMPORTANT: This is a placeholder timing array. You must update this
+        // by listening to your MP3 file and noting the start time of each verse.
+        const lyricTimings = [0, 6.2, 10.5, 15.0, 19.3, 23.6, 28.0, 32.5, 37.0, 41.5, 46.0, 50.5, 55.0, 59.5, 64.0, 68.5, 73.0, 77.5, 82.0, 86.5, 91.0, 95.5, 100.0, 104.5, 109.0, 113.5, 118.0, 122.5, 127.0, 131.5, 136.0, 140.5, 145.0, 149.5, 154.0, 158.5, 163.0, 167.5, 172.0, 176.5, 181.0, 185.5, 190.0, 194.5, 199.0, 203.5]; 
+        let currentLine = -1;
 
-            try {
-                const three = await loadThreeJS();
-                if (!three) return;
-                const { Scene, PerspectiveCamera, WebGLRenderer, Points, BufferGeometry, PointsMaterial, BufferAttribute } = three;
-                if (!canvas.getContext('webgl') && !canvas.getContext('experimental-webgl')) {
-                    console.warn('WebGL not supported, skipping particle system');
-                    return;
+        // --- CHAT WIDGET ELEMENTS ---
+        const chatBubble = document.getElementById("chat-bubble");
+        const chatWidget = document.getElementById("chat-widget");
+        const closeBtn = document.getElementById("close-chat-widget");
+        const chatForm = document.getElementById("chat-form");
+        const chatInput = document.getElementById("chat-input");
+        const chatWindow = document.getElementById("chat-window");
+
+        // --- CHALISA PLAYER LOGIC ---
+        function updateLyrics() {
+            if (!audio || audio.paused) return;
+            const currentTime = audio.currentTime;
+            let lineIndex = -1;
+            for(let i = 0; i < lyricTimings.length; i++) {
+                if (currentTime >= lyricTimings[i]) { lineIndex = i; } else { break; }
+            }
+            if (lineIndex !== -1 && lineIndex !== currentLine) {
+                lyricSpans.forEach(span => span.classList.remove('highlight'));
+                if (lyricSpans[lineIndex]) {
+                    lyricSpans[lineIndex].classList.add('highlight');
                 }
-
-                const scene = new Scene();
-                const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-                const renderer = new WebGLRenderer({ canvas, alpha: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-                const particleCount = window.innerWidth < 768 ? 500 : 1000;
-                const vertices = new Float32Array(particleCount * 3);
-                const colors = new Float32Array(particleCount * 3);
-                const sizes = new Float32Array(particleCount);
-
-                for (let i = 0; i < particleCount; i++) {
-                    vertices[i * 3] = (Math.random() - 0.5) * 100;
-                    vertices[i * 3 + 1] = (Math.random() - 0.5) * 100;
-                    vertices[i * 3 + 2] = (Math.random() - 0.5) * 100;
-                    colors[i * 3] = 0.482; // R (from #7B1FA2)
-                    colors[i * 3 + 1] = 0.122; // G
-                    colors[i * 3 + 2] = 0.635; // B
-                    sizes[i] = Math.random() * 2 + 1;
-                }
-
-                const geometry = new BufferGeometry();
-                geometry.setAttribute('position', new BufferAttribute(vertices, 3));
-                geometry.setAttribute('color', new BufferAttribute(colors, 3));
-                geometry.setAttribute('size', new BufferAttribute(sizes, 1));
-
-                const material = new PointsMaterial({ vertexColors: true, size: 2, transparent: true, opacity: 0.7 });
-                const particles = new Points(geometry, material);
-                scene.add(particles);
-
-                camera.position.z = 50;
-
-                let mouseX = 0, mouseY = 0;
-                document.addEventListener('mousemove', (e) => {
-                    mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-                    mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
-                });
-
-                function animate() {
-                    requestAnimationFrame(animate);
-                    particles.rotation.y += 0.001;
-                    particles.rotation.x += 0.001;
-                    particles.position.x = mouseX * 5;
-                    particles.position.y = mouseY * 5;
-                    renderer.render(scene, camera);
-                }
-                animate();
-
-                window.addEventListener('resize', () => {
-                    renderer.setSize(window.innerWidth, window.innerHeight);
-                    camera.aspect = window.innerWidth / window.innerHeight;
-                    camera.updateProjectionMatrix();
-                });
-            } catch (e) {
-                console.error('Failed to initialize particle system:', e);
+                currentLine = lineIndex;
             }
         }
+        function updateProgress() { if (audio && audio.duration) { progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`; } }
+        function seek(event) {
+            if (!audio.duration) return;
+            const width = progressBar.clientWidth;
+            const clickX = event.offsetX;
+            audio.currentTime = (clickX / width) * audio.duration;
+        }
+        
+        playPauseButton.addEventListener('click', () => {
+            if (audio.paused) { audio.play(); playPauseButton.innerHTML = '<i class="fas fa-pause"></i>'; } 
+            else { audio.pause(); playPauseButton.innerHTML = '<i class="fas fa-play"></i>'; }
+        });
+        if(audio) {
+            audio.addEventListener('timeupdate', () => { updateProgress(); updateLyrics(); });
+            audio.addEventListener('ended', () => { playPauseButton.innerHTML = '<i class="fas fa-play"></i>'; });
+        }
+        if(progressBar) progressBar.addEventListener('click', seek);
 
-        // Initialize audio visualizer
-        function initAudioVisualizer() {
-            const audio = document.getElementById('chalisa-audio');
-            const canvas = document.getElementById('audio-visualizer');
-            if (!audio || !canvas) return;
+        // --- CHAT WIDGET LOGIC ---
+        chatBubble.addEventListener('click', () => chatWidget.classList.toggle('visible'));
+        closeBtn.addEventListener('click', () => chatWidget.classList.remove('visible'));
 
+        chatForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const userMessage = chatInput.value.trim();
+            if (userMessage) processChatMessage(userMessage);
+        });
+        
+        async function processChatMessage(message) {
+            appendChatMessage(message, "user");
+            chatInput.value = "";
             try {
-                const ctx = canvas.getContext('2d');
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const analyser = audioCtx.createAnalyser();
-                const source = audioCtx.createMediaElementSource(audio);
-                source.connect(analyser);
-                analyser.connect(audioCtx.destination);
-                analyser.fftSize = 256;
-
-                const bufferLength = analyser.frequencyBinCount;
-                const dataArray = new Uint8Array(bufferLength);
-                canvas.width = canvas.offsetWidth;
-                canvas.height = canvas.offsetHeight;
-
-                function drawVisualizer() {
-                    requestAnimationFrame(drawVisualizer);
-                    analyser.getByteFrequencyData(dataArray);
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                    const barWidth = canvas.width / bufferLength;
-                    for (let i = 0; i < bufferLength; i++) {
-                        const barHeight = (dataArray[i] / 255) * canvas.height;
-                        ctx.fillStyle = `hsl(${i * 2}, 70%, 50%)`;
-                        ctx.fillRect(i * barWidth, canvas.height - barHeight, barWidth, barHeight);
-                    }
-                }
-
-                const observer = new IntersectionObserver((entries) => {
-                    if (entries[0].isIntersecting) {
-                        drawVisualizer();
-                        observer.disconnect();
-                    }
+                const response = await fetch("{{ url_for('get_chat_response') }}", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: message }),
                 });
-                observer.observe(canvas);
-            } catch (e) {
-                console.error('Failed to initialize audio visualizer:', e);
-            }
-        }
-
-        // Autocomplete suggestions
-        const suggestions = [
-            'Meaning of Hanuman Chalisa verse',
-            'Benefits of chanting Hanuman Chalisa',
-            'History of Hanuman Chalisa',
-            'How to chant Hanuman Chalisa correctly',
-            'Hanuman Chalisa in Hindi'
-        ];
-
-        // Initialize advanced features
-        if (typeof gsap !== 'undefined') {
-            gsap.registerPlugin(ScrollTrigger);
-            const tl = gsap.timeline();
-            tl.from(".parallax-img", { scale: 0.8, opacity: 0, duration: 1.5, ease: "power4.out" })
-              .from(".chalisa-text p", { y: 30, opacity: 0, duration: 0.8, stagger: 0.2, ease: "power3.out" }, "-=0.5")
-              .from("#query-button", { scale: 0, opacity: 0, duration: 0.5, ease: "back.out(1.7)" }, "-=0.3");
-        } else {
-            console.warn('GSAP not loaded, animations disabled');
-            document.querySelectorAll('.parallax-img, .chalisa-text p, #query-button, .background-video').forEach(el => {
-                el.style.opacity = 1;
-                el.style.transform = 'none';
-            });
-        }
-
-        const queryModal = document.getElementById('query-modal');
-        const queryButton = document.getElementById('query-button');
-        const modalClose = document.getElementById('modal-close');
-        const queryForm = document.getElementById('query-form');
-        const queryInput = document.getElementById('query-input');
-        const autocompleteList = document.getElementById('autocomplete-list');
-        const queryHistory = document.getElementById('query-history');
-        const historyList = document.getElementById('history-list');
-        const loadingSpinner = document.getElementById('loading-spinner');
-
-        // Load query history
-        function loadQueryHistory() {
-            const history = JSON.parse(localStorage.getItem('queryHistory') || '[]');
-            if (history.length) {
-                queryHistory.classList.remove('hidden');
-                historyList.innerHTML = history.map(query => `<li class="cursor-pointer hover:text-[var(--primary)]" role="option">${query}</li>`).join('');
-                historyList.querySelectorAll('li').forEach(item => {
-                    item.addEventListener('click', () => {
-                        queryInput.value = item.textContent;
-                        autocompleteList.classList.add('hidden');
-                    });
-                });
-            }
-        }
-
-        // Save query to history
-        function saveQuery(query) {
-            let history = JSON.parse(localStorage.getItem('queryHistory') || '[]');
-            history = [query, ...history.filter(q => q !== query)].slice(0, 5);
-            localStorage.setItem('queryHistory', JSON.stringify(history));
-            loadQueryHistory();
-        }
-
-        // Autocomplete logic
-        queryInput?.addEventListener('input', () => {
-            const value = queryInput.value.toLowerCase();
-            if (!value) {
-                autocompleteList.classList.add('hidden');
-                return;
-            }
-            const filtered = suggestions.filter(s => s.toLowerCase().includes(value));
-            autocompleteList.innerHTML = filtered.map(s => `<li class="px-4 py-2 cursor-pointer hover:bg-[var(--primary)]/20" role="option">${s}</li>`).join('');
-            autocompleteList.classList.toggle('hidden', !filtered.length);
-            autocompleteList.querySelectorAll('li').forEach(item => {
-                item.addEventListener('click', () => {
-                    queryInput.value = item.textContent;
-                    autocompleteList.classList.add('hidden');
-                });
-            });
-        });
-
-        queryInput?.addEventListener('keydown', (e) => {
-            const items = autocompleteList.querySelectorAll('li');
-            if (!items.length) return;
-            const active = document.activeElement;
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                const next = active.nextElementSibling || items[0];
-                next.focus();
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                const prev = active.previousElementSibling || items[items.length - 1];
-                prev.focus();
-            } else if (e.key === 'Enter' && active.tagName === 'LI') {
-                e.preventDefault();
-                queryInput.value = active.textContent;
-                autocompleteList.classList.add('hidden');
-                queryInput.focus();
-            }
-        });
-
-        queryButton?.addEventListener('click', () => {
-            queryModal.classList.remove('hidden');
-            queryModal.setAttribute('aria-hidden', 'false');
-            queryInput.focus();
-            loadQueryHistory();
-            if (typeof gsap !== 'undefined') {
-                gsap.from("#query-modal .glass", { 
-                    scale: 0.9, 
-                    opacity: 0, 
-                    duration: 0.5, 
-                    ease: "elastic.out(1, 0.5)" 
-                });
-            }
-        });
-
-        modalClose?.addEventListener('click', () => {
-            if (typeof gsap !== 'undefined') {
-                gsap.to("#query-modal .glass", { 
-                    scale: 0.9, 
-                    opacity: 0, 
-                    duration: 0.3, 
-                    ease: "power2.in", 
-                    onComplete: () => {
-                        queryModal.classList.add('hidden');
-                        queryModal.setAttribute('aria-hidden', 'true');
-                        autocompleteList.classList.add('hidden');
-                    }
-                });
-            } else {
-                queryModal.classList.add('hidden');
-                queryModal.setAttribute('aria-hidden', 'true');
-                autocompleteList.classList.add('hidden');
-            }
-        });
-
-        queryForm?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const query = queryInput.value.trim();
-            if (!query) return;
-            
-            loadingSpinner.classList.remove('hidden');
-            queryForm.querySelector('button span:first-child').classList.add('invisible');
-            
-            try {
-                const response = await fetch('/get_chat_response', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: query })
-                });
+                if (!response.ok) throw new Error("Network response not ok.");
                 const data = await response.json();
-                alert(`Hanuman Sevak: ${data.response}`);
-                saveQuery(query);
-                queryInput.value = '';
-                modalClose.click();
-            } catch (e) {
-                console.error('Query error:', e);
-                alert('Error communicating with Hanuman Sevak. Please try again.');
-            } finally {
-                loadingSpinner.classList.add('hidden');
-                queryForm.querySelector('button span:first-child').classList.remove('invisible');
+                appendChatMessage(data.response, "bot");
+            } catch (error) {
+                appendChatMessage("I apologize, an error occurred.", "bot");
             }
-        });
+        }
+        function appendChatMessage(message, type) {
+            const messageContainer = document.createElement("div");
+            messageContainer.className = `message ${type === 'user' ? 'user-message' : 'bot-message'}`;
+            messageContainer.innerHTML = `<div class="message-content">${message.replace(/\n/g, '<br>')}</div>`;
+            chatWindow.appendChild(messageContainer);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
 
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !queryModal.classList.contains('hidden')) {
-                modalClose.click();
-            }
-        });
-
-        // Error handling for static assets
-        document.querySelectorAll('img, video source, audio source').forEach(el => {
-            el.addEventListener('error', () => {
-                console.error(`Failed to load asset: ${el.src}`);
-                const errorMessage = document.createElement('p');
-                errorMessage.className = 'text-red-600 text-sm mt-1 text-center';
-                errorMessage.setAttribute('role', 'alert');
-                errorMessage.textContent = 'Failed to load media. Please check your connection or file path.';
-                
-                if (el.tagName === 'VIDEO' || el.parentElement.tagName === 'VIDEO') {
-                    el.closest('.background-video').style.display = 'none';
-                    document.querySelector('.video-fallback').style.display = 'block';
-                    document.querySelector('.video-overlay').style.background = 'linear-gradient(135deg, var(--background), var(--secondary))';
-                    document.body.appendChild(errorMessage);
-                    setTimeout(() => errorMessage.remove(), 5000);
-                } else {
-                    el.parentElement.style.display = 'none';
-                    el.parentElement.insertAdjacentElement('afterend', errorMessage);
-                    setTimeout(() => errorMessage.remove(), 5000);
-                }
-            });
-        });
-
-        // Initialize advanced features
-        initParticles();
-        initAudioVisualizer();
+        // Handle video background error
+        const video = document.getElementById('background-video');
+        if (video) {
+            const videoError = document.getElementById('videoError');
+            video.onerror = () => {
+                video.style.display = 'none';
+                videoError.style.display = 'block';
+            };
+        }
+    });
     </script>
-{% endblock %}
+</body>
+</html>

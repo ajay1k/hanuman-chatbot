@@ -1,122 +1,146 @@
-{% extends "base.html" %}
-{% block title %}Chat with Hanuman Sevak{% endblock %}
-{% block header_links %}
-    <a href="{{ url_for('chalisa_player') }}" class="text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Hanuman Chalisa</a>
-    <a href="{{ url_for('terms') }}" class="text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Terms of Use</a>
-    <a href="{{ url_for('privacy') }}" class="text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Privacy Policy</a>
-    <a href="#" class="logout-link text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Logout</a>
-{% endblock %}
-{% block content %}
-    <div class="glass p-6 sm:p-8">
-        <h2 class="text-2xl sm:text-3xl font-playfair text-[var(--primary)] mb-6 text-center">🕉️ Hanuman Sevak</h2>
-        <div id="chat-container" class="space-y-4 max-h-[60vh] overflow-y-auto mb-6">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Hanuman Sevak</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Noto+Serif+Devanagari:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        :root { --background: #FDF5E6; --primary: #FF9933; --text-dark: #1a1a1a; --container-bg: #FFFFFF; --bot-message-bg: #F0F0F0; --border-color: #1a1a1a; --font-sans: 'Sora', sans-serif; --font-serif: 'Noto Serif Devanagari', serif; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body { font-family: var(--font-sans); background-color: var(--background); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: var(--text-dark); }
+        #chat-container { width: 95%; max-width: 700px; height: 95vh; max-height: 850px; background-color: var(--container-bg); border-radius: 16px; border: 2px solid var(--border-color); box-shadow: 8px 8px 0px var(--border-color); display: flex; flex-direction: column; overflow: hidden; }
+        .header { background: var(--primary); color: var(--text-dark); padding: 16px 24px; border-bottom: 2px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 1.5em; font-weight: 700; }
+        .header-nav a { color: var(--text-dark); text-decoration: none; font-size: 0.9em; font-weight: 600; margin-left: 20px; padding: 6px 12px; border-radius: 8px; border: 2px solid var(--border-color); background-color: var(--background); box-shadow: 3px 3px 0px var(--border-color); }
+        #chat-window { flex-grow: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
+        .message { display: flex; align-items: flex-start; gap: 12px; max-width: 80%; animation: fadeIn 0.4s ease-out; }
+        .message-content { padding: 12px 16px; border-radius: 12px; line-height: 1.6; border: 2px solid var(--border-color); word-wrap: break-word; }
+        .bot-message { align-self: flex-start; }
+        .user-message { align-self: flex-end; flex-direction: row-reverse; }
+        .bot-message .message-content { background-color: var(--bot-message-bg); }
+        .user-message .message-content { background: var(--primary); color: var(--text-dark); font-weight: 600; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; flex-shrink: 0; border: 2px solid var(--border-color); }
+        .bot-message .avatar { background: var(--primary); color: var(--text-dark); font-family: var(--font-serif); }
+        .user-message .avatar { background: var(--bot-message-bg); color: var(--text-dark); }
+        #chat-form-container { padding: 16px 24px; border-top: 2px solid var(--border-color); background-color: #fff; }
+        #chat-form { display: flex; align-items: center; width: 100%; gap: 12px; }
+        #user-input { flex-grow: 1; border: 2px solid var(--border-color); background-color: var(--background); border-radius: 12px; padding: 12px 16px; font-size: 1em; color: var(--text-dark); font-family: var(--font-sans); }
+        #user-input:focus { outline: none; border-color: var(--primary); }
+        .icon-button { background-color: var(--container-bg); color: var(--text-dark); border: 2px solid var(--border-color); border-radius: 50%; width: 48px; height: 48px; cursor: pointer; font-size: 1.3em; display: flex; justify-content: center; align-items: center; transition: all 0.2s ease; box-shadow: 3px 3px 0px var(--border-color); }
+        .icon-button:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px var(--border-color); }
+        .icon-button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div class="header">
+            <h1>हनुमान सेवक</h1>
+            <div class="header-nav">
+                <a href="{{ url_for('chalisa_player') }}">Chalisa Player</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
+        <div id="chat-window">
             {% for msg in past_messages %}
-                <div class="chat-message {% if msg.sender_type == 'bot' %}bg-[var(--primary)]/10{% else %}bg-[var(--secondary)]/10{% endif %} p-4 rounded-lg neumo">
-                    <p class="text-[var(--text)]">
-                        {% if msg.sender_type == 'bot' %}🕉️{% endif %}
+                <div class="message {{ 'user-message' if msg.sender_type == 'user' else 'bot-message' }}">
+                    <div class="avatar">
+                        {{ '🕉️' if msg.sender_type == 'bot' else '<i class="fa-solid fa-user"></i>' | safe }}
+                    </div>
+                    <div class="message-content">
                         {{ msg.message_text | safe }}
-                    </p>
+                    </div>
                 </div>
             {% endfor %}
         </div>
-        <form id="chat-form" class="space-y-4">
-            <div class="relative tooltip-target">
-                <input type="text" id="chat-input" class="block w-full px-4 py-3 neumo border border-[var(--primary)]/30 rounded-lg text-[var(--text)] focus:ring-[var(--primary)] focus:border-[var(--primary)] transition duration-200" placeholder="Share your spiritual thoughts" aria-label="Chat input">
-                <span class="tooltip absolute -top-10 left-0 glass text-[var(--text)] text-xs p-2 rounded shadow-lg">Ask about Hanuman or spirituality</span>
-            </div>
-            <button type="submit" class="w-full bg-[var(--primary)] text-white py-3 px-4 rounded-lg btn-cta hover:bg-[var(--secondary)] focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition duration-200 relative">
-                <span>Send</span>
-                <span id="chat-loading" class="absolute inset-0 flex items-center justify-center hidden">
-                    <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                    </svg>
-                </span>
-            </button>
-        </form>
+        <div id="chat-form-container">
+            <form id="chat-form">
+                <input type="text" id="user-input" placeholder="Ask a question..." autocomplete="off">
+                <button type="button" id="mic-button" class="icon-button" aria-label="Use microphone"><i class="fa-solid fa-microphone-lines"></i></button>
+                <button type="submit" id="send-button" class="icon-button" aria-label="Send"><i class="fa-solid fa-paper-plane"></i></button>
+            </form>
+        </div>
     </div>
-{% endblock %}
-{% block additional_scripts %}
-    <script defer>
-        document.getElementById('chat-button').style.display = 'none';
-        const chatForm = document.getElementById('chat-form');
-        const chatInput = document.getElementById('chat-input');
-        const chatContainer = document.getElementById('chat-container');
-        const chatLoading = document.getElementById('chat-loading');
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const chatWindow = document.getElementById("chat-window");
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            const chatForm = document.getElementById("chat-form");
+            const userInput = document.getElementById("user-input");
+            const micButton = document.getElementById("mic-button");
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition;
 
-        if (typeof gsap !== 'undefined') {
-            gsap.from(".chat-message", { 
-                y: 20, 
-                opacity: 0, 
-                duration: 0.5, 
-                stagger: 0.1, 
-                ease: "power3.out" 
-            });
-        }
-
-        chatForm?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const message = chatInput.value.trim();
-            if (!message) return;
-
-            chatLoading.classList.remove('hidden');
-            chatForm.querySelector('button span:first-child').classList.add('invisible');
-
-            try {
-                const response = await fetch('/get_chat_response', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message })
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.lang = 'en-US';
+                micButton.addEventListener("click", () => {
+                    micButton.classList.contains('is-listening') ? recognition.stop() : recognition.start();
                 });
-                const data = await response.json();
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'chat-message bg-[var(--secondary)]/10 p-4 rounded-lg neumo';
-                messageDiv.innerHTML = `<p class="text-[var(--text)]">${message}</p>`;
-                chatContainer.appendChild(messageDiv);
-                const botDiv = document.createElement('div');
-                botDiv.className = 'chat-message bg-[var(--primary)]/10 p-4 rounded-lg neumo';
-                botDiv.innerHTML = `<p class="text-[var(--text)]">🕉️ ${data.response}</p>`;
-                chatContainer.appendChild(botDiv);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-                if (typeof gsap !== 'undefined') {
-                    gsap.from([messageDiv, botDiv], { 
-                        y: 20, 
-                        opacity: 0, 
-                        duration: 0.5, 
-                        ease: "power3.out" 
-                    });
-                }
-                chatInput.value = '';
-            } catch (e) {
-                console.error('Chat error:', e);
-                alert('Error sending message. Please try again.');
-            } finally {
-                chatLoading.classList.add('hidden');
-                chatForm.querySelector('button span:first-child').classList.remove('invisible');
+                recognition.onstart = () => micButton.classList.add("is-listening");
+                recognition.onend = () => micButton.classList.remove("is-listening");
+                recognition.onerror = (event) => console.error("Speech recognition error:", event.error);
+                recognition.onresult = (event) => {
+                    userInput.value = event.results[0][0].transcript;
+                    document.getElementById("send-button").click();
+                };
+            } else {
+                if(micButton) micButton.style.display = 'none';
             }
-        });
 
-        chatInput?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                chatForm.dispatchEvent(new Event('submit'));
-            }
-        });
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    if (typeof gsap !== 'undefined') {
-                        gsap.from(entry.target, { 
-                            y: 20, 
-                            opacity: 0, 
-                            duration: 0.5, 
-                            ease: "power3.out" 
-                        });
-                    }
-                }
+            chatForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                const userMessage = userInput.value.trim();
+                if (userMessage) processUserMessage(userMessage);
             });
+            
+            async function processUserMessage(message) {
+                appendMessage(message, "user");
+                userInput.value = "";
+                showTypingIndicator();
+                try {
+                    const response = await fetch("{{ url_for('get_chat_response') }}", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ message: message }),
+                    });
+                    if (!response.ok) throw new Error("Network response not ok.");
+                    const data = await response.json();
+                    removeTypingIndicator();
+                    appendMessage(data.response, "bot");
+                } catch (error) {
+                    removeTypingIndicator();
+                    appendMessage("I apologize, an error occurred.", "bot");
+                }
+            }
+
+            function appendMessage(message, type) {
+                const messageContainer = document.createElement("div");
+                messageContainer.className = `message ${type === 'user' ? 'user-message' : 'bot-message'}`;
+                const avatarIcon = type === 'user' ? '<i class="fa-solid fa-user"></i>' : '🕉️';
+                messageContainer.innerHTML = `<div class="avatar">${avatarIcon}</div><div class="message-content">${message.replace(/\n/g, '<br>')}</div>`;
+                chatWindow.appendChild(messageContainer);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            function showTypingIndicator() {
+                const indicatorHTML = `<div class="message bot-message" id="typing-indicator"><div class="avatar">🕉️</div><div class="message-content">...</div></div>`;
+                if(!document.getElementById('typing-indicator')) chatWindow.insertAdjacentHTML('beforeend', indicatorHTML);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            function removeTypingIndicator() {
+                document.getElementById("typing-indicator")?.remove();
+            }
+
+            if (chatWindow.children.length === 0) {
+                 appendMessage("Jai Sri Ram! I am a humble sevak. How may I guide you today?", "bot");
+            }
         });
-        document.querySelectorAll('.chat-message').forEach(msg => observer.observe(msg));
     </script>
-{% endblock %}
+</body>
+</html>

@@ -1,56 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Log In{% endblock %}
-{% block header_links %}
-    <a href="{{ url_for('register') }}" class="text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]">Register</a>
-{% endblock %}
 {% block content %}
-    <div class="glass p-6 sm:p-8 max-w-md mx-auto">
-        <h2 class="text-2xl sm:text-3xl font-playfair text-[var(--primary)] mb-6 text-center">Welcome Back, Devotee</h2>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="p-4 mb-4 rounded-lg neumo {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}" role="alert">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        <form method="POST" class="space-y-6">
-            {{ form.hidden_tag() }}
-            <div>
-                <label for="username" class="block text-sm font-medium text-[var(--text)]">{{ form.username.label }}</label>
-                {{ form.username(class="mt-1 block w-full px-4 py-2 neumo border border-[var(--primary)]/20 rounded-lg text-[var(--text)] focus:ring-[var(--primary)] focus:border-[var(--primary)] transition duration-200", placeholder="Enter your username", **{'aria-describedby': 'username-error'}) }}
-                <p id="username-error" class="text-xs text-[var(--text)] mt-1">Enter your sacred username</p>
-            </div>
-            <div>
-                <label for="password" class="block text-sm font-medium text-[var(--text)]">{{ form.password.label }}</label>
-                {{ form.password(class="mt-1 block w-full px-4 py-2 neumo border border-[var(--primary)]/20 rounded-lg text-[var(--text)] focus:ring-[var(--primary)] focus:border-[var(--primary)] transition duration-200", placeholder="Enter your password", **{'aria-describedby': 'password-error'}) }}
-                <p id="password-error" class="text-xs text-[var(--text)] mt-1">Use a secure password</p>
-            </div>
-            <div class="flex items-center">
-                {{ form.remember_me(class="h-4 w-4 text-[var(--primary)] focus:ring-[var(--primary)] border-[var(--primary)]/20 rounded") }}
-                <label for="remember_me" class="ml-2 text-sm text-[var(--text)]">{{ form.remember_me.label }}</label>
-            </div>
-            <div>
-                {{ form.submit(class="w-full bg-[var(--primary)] text-white py-2 px-4 rounded-lg btn-cta hover:bg-[var(--secondary)] focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition duration-200") }}
-            </div>
-        </form>
-        <p class="text-center text-sm text-[var(--text)] mt-4">
-            Need an account? <a href="{{ url_for('register') }}" class="text-[var(--primary)] hover:underline">Join the Journey</a>
-        </p>
-    </div>
-{% endblock %}
-{% block additional_scripts %}
-    <script defer>
-        if (typeof gsap !== 'undefined') {
-            gsap.from(".glass", { y: 50, opacity: 0, duration: 1, ease: "power3.out" });
-            gsap.from("form > div", { x: -20, opacity: 0, duration: 0.8, stagger: 0.2, ease: "power3.out" });
-        } else {
-            console.warn('GSAP not loaded, animations disabled');
-            document.querySelectorAll('.glass, form > div').forEach(el => {
-                el.style.opacity = 1;
-                el.style.transform = 'none';
-            });
-        }
-    </script>
+    <h1>Welcome Back</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.username.label }}
+            {{ form.username(size=32) }}
+        </div>
+        <div class="form-group">
+            {{ form.password.label }}
+            {{ form.password(size=32) }}
+        </div>
+        <div class="form-group" style="text-align: left; display: flex; align-items: center; gap: 8px;">
+            {{ form.remember_me() }}
+            {{ form.remember_me.label }}
+        </div>
+        <div class="form-group">
+            {{ form.submit(class="btn") }}
+        </div>
+    </form>
+    <p>Need an account? <a href="{{ url_for('register') }}">Register Here</a></p>
 {% endblock %}
