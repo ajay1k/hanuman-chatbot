@@ -4,263 +4,195 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hanuman Chalisa Player</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Tiro+Devanagari+Sanskrit:wght@400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
-        :root {
-            --primary-color: #FF9933; /* Saffron */
-            --secondary-color: #aff5722; /* Deep Orange */
-            --background-dark: #0d1117;
-            --container-bg: #161b22;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --text-primary: #e6edf3;
-            --text-secondary: #7d8590;
-            --font-serif: 'Tiro Devanagari Sanskrit', serif;
-            --font-sans: 'Poppins', sans-serif;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        body {
-            font-family: var(--font-sans);
-            background-color: var(--background-dark);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: var(--text-primary);
-        }
-
-        video { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; opacity: 0.2; filter: blur(4px); }
-
-        .page-container {
-            display: flex;
-            width: 95%;
-            max-width: 1500px;
-            height: 95vh;
-            background: var(--container-bg);
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-            overflow: hidden;
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        /* --- Lyrics Panel (Left) --- */
-        .lyrics-panel {
-            flex: 1;
-            padding: 50px;
-            overflow-y: auto;
-            border-right: 1px solid var(--border-color);
-        }
-        .lyrics-panel h1 {
-            font-family: var(--font-serif);
-            font-size: 2.8em;
-            color: var(--primary-color);
-            text-align: center;
-            margin-bottom: 40px;
-            font-weight: 400;
-        }
-        .lyrics-content {
-            font-family: var(--font-serif);
-            font-size: 1.6em;
-            line-height: 2.3;
-            color: var(--text-primary);
-        }
-        .lyrics-content p {
-            margin-bottom: 2em;
-            transition: color 0.4s, transform 0.4s;
-            opacity: 0.7;
-        }
-        .lyrics-content p.highlight {
-            color: var(--primary-color);
-            transform: scale(1.03);
-            opacity: 1;
-            text-shadow: 0 0 10px rgba(255, 153, 51, 0.3);
-        }
-
-        /* --- Player Panel (Right) --- */
-        .player-panel {
-            width: 420px;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            padding: 50px;
-            background-color: var(--background-dark);
-        }
-        .player-header { text-align: center; }
-        .om-logo { font-size: 4.5em; color: var(--primary-color); text-shadow: 0 0 20px var(--primary-color); }
-        .player-header h2 { font-weight: 600; font-size: 2em; margin: 15px 0 5px; }
-        .player-header p { font-size: 1.1em; color: var(--text-secondary); }
-        
-        .player-controls { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-        .progress-bar { width: 100%; height: 8px; background: var(--container-bg); border-radius: 4px; cursor: pointer; }
-        .progress { height: 100%; background: var(--primary-color); width: 0; border-radius: 4px; }
-        .time-display { width: 100%; display: flex; justify-content: space-between; font-size: 0.9em; color: var(--text-secondary); }
-        .controls { display: flex; align-items: center; gap: 25px; }
-        
-        .control-button {
-            width: 50px; height: 50px; border-radius: 50%;
-            background: var(--container-bg); color: var(--text-secondary);
-            border: 1px solid var(--border-color); font-size: 1.2em;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.2s;
-        }
-        .control-button:hover { color: var(--text-primary); border-color: var(--primary-color); }
-        
-        .play-pause-button {
-            width: 80px; height: 80px; font-size: 2.2em;
-            background: var(--primary-color); color: white; border: none;
-        }
-        .play-pause-button:hover { background-color: var(--secondary-color); }
-        
-        .nav-buttons { display: flex; justify-content: space-between; width: 100%; }
-        .nav-buttons a {
-            color: var(--text-secondary); text-decoration: none; padding: 10px 15px;
-            border-radius: 8px; transition: all 0.2s ease;
-        }
-        .nav-buttons a:hover { background-color: var(--container-bg); color: var(--text-primary); }
-        
-        @media (max-width: 1200px) {
-            .page-container { flex-direction: column; height: auto; max-height: none; }
-            .player-panel { width: 100%; border-top: 1px solid var(--border-color); padding: 30px; }
-            .lyrics-panel { padding: 30px; height: 60vh; }
-        }
+        :root { --chalisa-primary: #800000; --chalisa-accent: #ff9933; --chalisa-bg: #1a1a1a; --font-serif: 'Noto Serif Devanagari', serif; --font-sans: 'Inter', sans-serif;}
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-serif); min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; padding: 40px 10px; color: var(--chalisa-primary); background: var(--chalisa-bg); overflow-x: hidden; }
+        video { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; opacity: 0.92; }
+        .main-container { margin-top: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; z-index: 2; background: rgba(255, 245, 230, 0.25); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: 55px; padding: 15px; max-width: 500px; width: 95%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35); animation: fadeIn 1.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
+        .om-logo::before { content: '🕉'; font-size: 3.2em; color: var(--chalisa-accent); text-shadow: 0 0 12px rgba(255, 153, 51, 0.8); animation: glow 2.5s ease-in-out infinite alternate; }
+        @keyframes glow { to { text-shadow: 0 0 18px rgba(255, 153, 51, 1); } }
+        h1 { font-size: 2.3em; font-weight: 700; margin: 15px 0; }
+        .audio-player { margin: 15px 0; }
+        .custom-audio-controls { display: flex; align-items: center; gap: 12px; background: rgba(255, 245, 230, 0.3); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: 10px 18px; border-radius: 35px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 153, 51, 0.3); }
+        .icon-btn { width: 50px; height: 50px; border-radius: 15px; color: #fff5e6; border: none; font-size: 1.6em; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); transition: transform 0.2s; }
+        .play-pause-button { background: linear-gradient(145deg, #ff9933, #800000); }
+        .play-pause-button:hover { transform: scale(1.1); }
+        .progress-bar { flex-grow: 1; height: 5px; background: rgba(255, 245, 230, 0.4); border-radius: 3px; overflow: hidden; cursor: pointer; max-width: 200px; border: 1px solid rgba(128, 0, 0, 0.2); }
+        .progress { height: 100%; background: linear-gradient(90deg, #ff9933, #800000); width: 0; border-radius: 3px; }
+        .lyrics { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1; text-align: center; font-size: 1.6em; line-height: 1.9; background: rgba(255, 245, 230, 0.25); backdrop-filter: blur(1px); -webkit-backdrop-filter: blur(1px); padding: 10px; border-radius: 10px; min-height: 80px; max-width: 90%; width: auto; }
+        .lyrics span { display: none; animation: lyricFade 0.6s ease-in-out; }
+        .lyrics span.highlight { display: block; }
+        @keyframes lyricFade { from { opacity: 0; } to { opacity: 1; } }
+        .video-error { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url("{{ url_for('static', filename='hanuman-bg.jpg') }}") no-repeat center/cover fixed; z-index: -1; }
+        .back-button { color: white; position: fixed; top: 20px; left: 20px; text-decoration: none; font-size: 1.5rem; z-index: 1000; transition: transform 0.2s; }
+        .back-button:hover { transform: scale(1.1); }
+        .chat-bubble { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: linear-gradient(135deg, #ffc107, #ff9800); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s ease-in-out; z-index: 999; }
+        .chat-bubble:hover { transform: scale(1.1); }
+        .chat-widget { position: fixed; bottom: 100px; right: 30px; width: 90%; max-width: 400px; height: 70vh; max-height: 600px; background-color: #1a2233; border-radius: 20px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); display: flex; flex-direction: column; overflow: hidden; z-index: 998; transform: translateY(20px) scale(0.95); opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+        .chat-widget.visible { transform: translateY(0) scale(1); opacity: 1; visibility: visible; }
+        .chat-widget .header { background: linear-gradient(135deg, #ffc107, #ff9800); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .chat-widget .header h2 { font-family: var(--font-sans); font-size: 1.2em; margin: 0; }
+        .chat-widget .header .close-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+        .chat-widget #chat-window { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; font-family: var(--font-sans); }
+        .chat-widget .message { display: flex; align-items: flex-start; gap: 10px; max-width: 85%; font-size: 0.9em; animation: fadeIn 0.5s ease-out; }
+        .chat-widget .message-content { padding: 10px 15px; border-radius: 18px; line-height: 1.5; word-wrap: break-word; }
+        .chat-widget .bot-message { align-self: flex-start; }
+        .chat-widget .user-message { align-self: flex-end; flex-direction: row-reverse; }
+        .chat-widget .bot-message .message-content { background-color: #2a344a; color: #f0f0f0; }
+        .chat-widget .user-message .message-content { background: linear-gradient(45deg, #ff9800, #ff5722); color: white; }
+        .chat-widget .avatar { display: none; }
+        .chat-widget #chat-form-container { padding: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .chat-widget #chat-form { display: flex; gap: 10px; }
+        .chat-widget #chat-input { flex-grow: 1; border: none; background-color: #2a344a; border-radius: 20px; padding: 10px 15px; font-size: 1em; color: #f0f0f0; font-family: var(--font-sans); }
+        .chat-widget #send-button { background-color: #ff9800; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; flex-shrink: 0; cursor: pointer; }
     </style>
 </head>
 <body>
+    <div class="top-nav">
+        <a href="{{ url_for('chat') }}" aria-label="Back to Chat"><i class="fas fa-arrow-left"></i></a>
+        <a href="{{ url_for('logout') }}" aria-label="Logout"><i class="fas fa-sign-out-alt"></i></a>
+    </div>
+
     <video autoplay muted loop id="background-video" preload="auto">
         <source src="{{ url_for('static', filename='hanuman.mp4') }}" type="video/mp4">
     </video>
-
-    <div class="page-container">
-        <!-- Lyrics Panel (Left Side) -->
-        <div class="lyrics-panel">
-            <h1>हनुमान चालीसा</h1>
-            <div class="lyrics-content" id="lyrics">
-                <p data-start="0">श्रीगुरु चरन सरोज रज निज मनु मुकुरु सुधारि।<br>बरनउँ रघुबर बिमल जसु जो दायकु फल चारि।</p>
-                <p data-start="6.2">बुद्धिहीन तनु जानिके सुमिरौ पवन कुमार।<br>बल बुद्धि बिद्या देहु मोहि हरहु कलेस बिकार।</p>
-                <p data-start="10.5">जय हनुमान ज्ञान गुन सागर। जय कपीस तिहुँ लोक उजागर।</p>
-                <!-- Add all 43 verses as <p> tags with data-start attributes -->
-                <p data-start="203.5">पवन तनय संकट हरन मंगल मूरति रूप।<br>राम लखन सीता सहित हृदय बसहु सुर भूप।</p>
-            </div>
-        </div>
-
-        <!-- Player Panel (Right Side) -->
-        <div class="player-panel">
-            <div class="player-header">
-                <div class="om-logo">🕉️</div>
-                <h2>Hanuman Chalisa</h2>
-                <p>Divine Hymn of Devotion</p>
-            </div>
-            
-            <div class="player-controls">
-                <audio id="hanumanAudio" preload="auto" src="{{ url_for('static', filename='hanuman-chalisa.mp3') }}"></audio>
+    <div class="video-error" id="videoError"></div>
+    <div class="main-container">
+        <div class="om-logo"></div>
+        <h1>Hanuman Chalisa</h1>
+        <div class="audio-player">
+            <audio id="hanumanAudio" preload="auto" src="{{ url_for('static', filename='hanuman-chalisa.mp3') }}"></audio>
+            <div class="custom-audio-controls">
+                <button id="playPauseButton" class="icon-btn play-pause-button"><i class="fas fa-play"></i></button>
                 <div class="progress-bar" id="progressBar"><div class="progress" id="progress"></div></div>
-                <div class="time-display">
-                    <span id="currentTime">0:00</span>
-                    <span id="totalDuration">0:00</span>
-                </div>
-                <div class="controls">
-                    <button id="restartButton" class="control-button"><i class="fas fa-redo-alt"></i></button>
-                    <button id="playPauseButton" class="play-pause-button"><i class="fas fa-play"></i></button>
-                    <button id="chat-bubble" class="control-button"><i class="fas fa-comment-dots"></i></button>
-                </div>
-            </div>
-
-            <div class="nav-buttons">
-                <a href="{{ url_for('chat') }}"><i class="fas fa-arrow-left"></i> Back to Chat</a>
-                <a href="{{ url_for('logout') }}">Logout <i class="fas fa-sign-out-alt"></i></a>
             </div>
         </div>
     </div>
-    
-    <!-- Chat Widget remains structurally the same but is now controlled from the player controls -->
+    <div class="lyrics" id="lyrics">
+        <span>श्रीगुरु चरन सरोज रज निज मनु मुकुरु सुधारि। बरनउँ रघुबर बिमल जसु जो दायकु फल चारि।</span>
+        <span>बुद्धिहीन तनु जानिके सुमिरौ पवन कुमार। बल बुद्धि बिद्या देहु मोहि हरहु कलेस बिकार।</span>
+        <span>पवन तनय संकट हरन मंगल मूरति रूप। राम लखन सीता सहित हृदय बसहु सुर भूप।</span>
+    </div>
+
+    <div class="chat-bubble" id="chat-bubble"><i class="fa-solid fa-comment-dots"></i></div>
+    <div class="chat-widget" id="chat-widget">
+        <div class="header">
+            <h2>Hanuman Sevak</h2>
+            <button class="close-btn" id="close-chat-widget">&times;</button>
+        </div>
+        <div id="chat-window"></div>
+        <div id="chat-form-container">
+            <form id="chat-form">
+                <input type="text" id="chat-input" placeholder="Ask a question..." autocomplete="off">
+                <button type="submit" id="send-button" class="icon-button"><i class="fa-solid fa-paper-plane"></i></button>
+            </form>
+        </div>
+    </div>
 
     <script>
     document.addEventListener("DOMContentLoaded", () => {
+        // --- CHALISA PLAYER ELEMENTS ---
         const audio = document.getElementById('hanumanAudio');
-        const lyricParagraphs = Array.from(document.querySelectorAll('#lyrics p'));
+        const lyricsContainer = document.getElementById('lyrics');
+        const lyricSpans = Array.from(lyricsContainer.getElementsByTagName('span'));
         const progressBar = document.getElementById('progressBar');
         const progress = document.getElementById('progress');
         const playPauseButton = document.getElementById('playPauseButton');
-        const restartButton = document.getElementById('restartButton');
-        const currentTimeEl = document.getElementById('currentTime');
-        const totalDurationEl = document.getElementById('totalDuration');
-        let currentLineEl = null;
+        // IMPORTANT: This is a placeholder timing array. You must update this
+        // by listening to your MP3 file and noting the start time of each verse.
+        const lyricTimings = [0, 6.2, 10.5, 15.0, 19.3, 23.6, 28.0, 32.5, 37.0, 41.5, 46.0, 50.5, 55.0, 59.5, 64.0, 68.5, 73.0, 77.5, 82.0, 86.5, 91.0, 95.5, 100.0, 104.5, 109.0, 113.5, 118.0, 122.5, 127.0, 131.5, 136.0, 140.5, 145.0, 149.5, 154.0, 158.5, 163.0, 167.5, 172.0, 176.5, 181.0, 185.5, 190.0, 194.5, 199.0, 203.5]; 
+        let currentLine = -1;
 
-        // NOTE: Timings must be manually set to match your audio file
-        const lyricTimings = [0, 6.2, 10.5, /* ... all other timings ... */ 203.5];
+        // --- CHAT WIDGET ELEMENTS ---
+        const chatBubble = document.getElementById("chat-bubble");
+        const chatWidget = document.getElementById("chat-widget");
+        const closeBtn = document.getElementById("close-chat-widget");
+        const chatForm = document.getElementById("chat-form");
+        const chatInput = document.getElementById("chat-input");
+        const chatWindow = document.getElementById("chat-window");
 
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-        }
-
-        audio.onloadedmetadata = () => {
-            totalDurationEl.textContent = formatTime(audio.duration);
-        };
-
-        function highlightLyrics() {
+        // --- CHALISA PLAYER LOGIC ---
+        function updateLyrics() {
+            if (!audio || audio.paused) return;
             const currentTime = audio.currentTime;
-            let activeParagraph = null;
-            for (let i = 0; i < lyricParagraphs.length; i++) {
-                const startTime = parseFloat(lyricParagraphs[i].dataset.start || lyricTimings[i]);
-                if (currentTime >= startTime) {
-                    activeParagraph = lyricParagraphs[i];
-                } else {
-                    break;
+            let lineIndex = -1;
+            for(let i = 0; i < lyricTimings.length; i++) {
+                if (currentTime >= lyricTimings[i]) { lineIndex = i; } else { break; }
+            }
+            if (lineIndex !== -1 && lineIndex !== currentLine) {
+                lyricSpans.forEach(span => span.classList.remove('highlight'));
+                if (lyricSpans[lineIndex]) {
+                    lyricSpans[lineIndex].classList.add('highlight');
                 }
-            }
-            if (activeParagraph && activeParagraph !== currentLineEl) {
-                lyricParagraphs.forEach(p => p.classList.remove('highlight'));
-                activeParagraph.classList.add('highlight');
-                currentLineEl = activeParagraph;
-                activeParagraph.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+                currentLine = lineIndex;
             }
         }
-
-        function updateProgress() {
-            if (audio.duration) {
-                progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
-                currentTimeEl.textContent = formatTime(audio.currentTime);
-            }
-        }
+        function updateProgress() { if (audio && audio.duration) { progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`; } }
         function seek(event) {
+            if (!audio.duration) return;
             const width = progressBar.clientWidth;
             const clickX = event.offsetX;
             audio.currentTime = (clickX / width) * audio.duration;
         }
+        
+        playPauseButton.addEventListener('click', () => {
+            if (audio.paused) { audio.play(); playPauseButton.innerHTML = '<i class="fas fa-pause"></i>'; } 
+            else { audio.pause(); playPauseButton.innerHTML = '<i class="fas fa-play"></i>'; }
+        });
+        if(audio) {
+            audio.addEventListener('timeupdate', () => { updateProgress(); updateLyrics(); });
+            audio.addEventListener('ended', () => { playPauseButton.innerHTML = '<i class="fas fa-play"></i>'; });
+        }
+        if(progressBar) progressBar.addEventListener('click', seek);
 
-        function togglePlayPause() {
-            if (audio.paused) {
-                audio.play();
-                playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
-            } else {
-                audio.pause();
-                playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+        // --- CHAT WIDGET LOGIC ---
+        chatBubble.addEventListener('click', () => chatWidget.classList.toggle('visible'));
+        closeBtn.addEventListener('click', () => chatWidget.classList.remove('visible'));
+
+        chatForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const userMessage = chatInput.value.trim();
+            if (userMessage) processChatMessage(userMessage);
+        });
+        
+        async function processChatMessage(message) {
+            appendChatMessage(message, "user");
+            chatInput.value = "";
+            try {
+                const response = await fetch("{{ url_for('get_chat_response') }}", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: message }),
+                });
+                if (!response.ok) throw new Error("Network response not ok.");
+                const data = await response.json();
+                appendChatMessage(data.response, "bot");
+            } catch (error) {
+                appendChatMessage("I apologize, an error occurred.", "bot");
             }
         }
+        function appendChatMessage(message, type) {
+            const messageContainer = document.createElement("div");
+            messageContainer.className = `message ${type === 'user' ? 'user-message' : 'bot-message'}`;
+            messageContainer.innerHTML = `<div class="message-content">${message.replace(/\n/g, '<br>')}</div>`;
+            chatWindow.appendChild(messageContainer);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
 
-        playPauseButton.addEventListener('click', togglePlayPause);
-        restartButton.addEventListener('click', () => { audio.currentTime = 0; });
-        audio.addEventListener('timeupdate', () => { updateProgress(); highlightLyrics(); });
-        progressBar.addEventListener('click', seek);
-        audio.addEventListener('ended', () => { playPauseButton.innerHTML = '<i class="fas fa-play"></i>'; });
-        
-        // Chat widget logic could be added here if needed, controlled by the chat bubble button
+        // Handle video background error
+        const video = document.getElementById('background-video');
+        if (video) {
+            const videoError = document.getElementById('videoError');
+            video.onerror = () => {
+                video.style.display = 'none';
+                videoError.style.display = 'block';
+            };
+        }
     });
     </script>
 </body>
 </html>
-
