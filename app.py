@@ -5,7 +5,6 @@ from flask import Flask, render_template, flash, redirect, url_for, request, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -162,7 +161,6 @@ def get_chat_response():
     db.session.add(user_message_db)
     
     try:
-        # For a truly continuous conversation, you would build the history here from the database.
         chat_session = model.start_chat(history=[]) 
         response = chat_session.send_message(user_message_text)
         bot_response_text = response.text
