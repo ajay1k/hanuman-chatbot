@@ -27,16 +27,17 @@
             align-items: center;
             min-height: 100vh;
         }
-        .auth-container {
+        .container {
             background: var(--container-bg);
             padding: 40px;
             border-radius: 12px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 420px;
             text-align: center;
             border-top: 5px solid var(--primary-color);
         }
+        .auth-container { max-width: 420px; }
+        .static-page-container { max-width: 800px; text-align: left; }
         .om-logo {
             font-family: 'Noto Serif Devanagari', serif;
             font-size: 3em;
@@ -48,6 +49,9 @@
             margin-bottom: 24px;
             font-weight: 600;
         }
+        .static-page-container h1 { text-align: center; }
+        .static-page-container h2 { margin-top: 30px; color: var(--secondary-color); }
+        .static-page-container ul { list-style-position: inside; padding-left: 20px; }
         a {
             color: var(--primary-color);
             text-decoration: none;
@@ -73,6 +77,7 @@
             border-radius: 8px;
             box-sizing: border-box;
             transition: border-color 0.3s;
+            font-size: 1em;
         }
         input[type="text"]:focus, input[type="password"]:focus {
             outline: none;
@@ -106,8 +111,7 @@
     </style>
 </head>
 <body>
-    <div class="auth-container">
-        <div class="om-logo">🕉️</div>
+    <div class="container {% block container_class %}{% endblock %}">
         {% block content %}{% endblock %}
     </div>
 </body>
