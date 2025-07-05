@@ -15,7 +15,8 @@ app = Flask(__name__)
 # IMPORTANT: For local testing, replace these placeholders with your actual keys.
 # For deployment, these should be set as environment variables.
 app.config['SECRET_KEY'] = '89b4fcd0b3373dbd5782d7d1d0f70f6b' 
-GEMINI_API_KEY = "v AIzaSyBcq8jfp8IievJB9bGsL3g6iMvnzhyzCYw"
+GEMINI_API_KEY = "AIzaSyBcq8jfp8IievJB9bGsL3g6iMvnzhyzCYw"
+
 # --- Database Configuration ---
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'site.db')
