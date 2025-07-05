@@ -7,12 +7,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Noto+Serif+Devanagari:wght@400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
-        :root { --background: #FDF5E6; --primary: #FF9933; --text-dark: #1a1a1a; --container-bg: #FFFFFF; --bot-message-bg: #F0F0F0; --border-color: #1a1a1a; --font-sans: 'Sora', sans-serif; --font-serif: 'Noto Serif Devanagari', serif; }
+        /* All the same CSS from the "Sacred Saffron" theme */
+        :root { --background: #FDF5E6; --primary: #FF9933; --text-dark: #1a1a1a; --container-bg: #FFFFFF; --bot-message-bg: #F0F0F0; --border-color: #1a1a1a; --font-sans: 'Sora', sans-serif; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         body { font-family: var(--font-sans); background-color: var(--background); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: var(--text-dark); }
-        #chat-container { width: 95%; max-width: 700px; height: 95vh; max-height: 850px; background-color: var(--container-bg); border-radius: 16px; border: 2px solid var(--border-color); box-shadow: 8px 8px 0px var(--border-color); display: flex; flex-direction: column; overflow: hidden; }
+        #chat-container { width: 95%; max-width: 700px; height: 95vh; background-color: var(--container-bg); border-radius: 16px; border: 2px solid var(--border-color); box-shadow: 8px 8px 0px var(--border-color); display: flex; flex-direction: column; overflow: hidden; }
         .header { background: var(--primary); color: var(--text-dark); padding: 16px 24px; border-bottom: 2px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .header h1 { margin: 0; font-size: 1.5em; font-weight: 700; }
         .header-nav a { color: var(--text-dark); text-decoration: none; font-size: 0.9em; font-weight: 600; margin-left: 20px; padding: 6px 12px; border-radius: 8px; border: 2px solid var(--border-color); background-color: var(--background); box-shadow: 3px 3px 0px var(--border-color); }
@@ -23,16 +24,16 @@
         .user-message { align-self: flex-end; flex-direction: row-reverse; }
         .bot-message .message-content { background-color: var(--bot-message-bg); }
         .user-message .message-content { background: var(--primary); color: var(--text-dark); font-weight: 600; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; flex-shrink: 0; border: 2px solid var(--border-color); }
-        .bot-message .avatar { background: var(--primary); color: var(--text-dark); font-family: var(--font-serif); }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; flex-shrink: 0; border: 2px solid var(--border-color); font-family: 'Noto Serif Devanagari', serif;}
+        .bot-message .avatar { background: var(--primary); color: var(--text-dark); }
         .user-message .avatar { background: var(--bot-message-bg); color: var(--text-dark); }
+        .image-preview { max-width: 150px; border-radius: 8px; margin-top: 8px; cursor: pointer; }
         #chat-form-container { padding: 16px 24px; border-top: 2px solid var(--border-color); background-color: #fff; }
         #chat-form { display: flex; align-items: center; width: 100%; gap: 12px; }
-        #user-input { flex-grow: 1; border: 2px solid var(--border-color); background-color: var(--background); border-radius: 12px; padding: 12px 16px; font-size: 1em; color: var(--text-dark); font-family: var(--font-sans); }
+        #user-input { flex-grow: 1; border: 2px solid var(--border-color); background-color: var(--background); border-radius: 12px; padding: 12px 16px; font-size: 1em; color: var(--text-dark); }
         #user-input:focus { outline: none; border-color: var(--primary); }
-        .icon-button { background-color: var(--container-bg); color: var(--text-dark); border: 2px solid var(--border-color); border-radius: 50%; width: 48px; height: 48px; cursor: pointer; font-size: 1.3em; display: flex; justify-content: center; align-items: center; transition: all 0.2s ease; box-shadow: 3px 3px 0px var(--border-color); }
+        .icon-button { background-color: var(--container-bg); color: var(--text-dark); border: 2px solid var(--border-color); border-radius: 50%; width: 48px; height: 48px; cursor: pointer; font-size: 1.3em; display: flex; justify-content: center; align-items: center; transition: all 0.2s ease; box-shadow: 3px 3px 0px var(--border-color); flex-shrink: 0; }
         .icon-button:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px var(--border-color); }
-        .icon-button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); }
     </style>
 </head>
 <body>
@@ -59,7 +60,8 @@
         <div id="chat-form-container">
             <form id="chat-form">
                 <input type="text" id="user-input" placeholder="Ask a question..." autocomplete="off">
-                <button type="button" id="mic-button" class="icon-button" aria-label="Use microphone"><i class="fa-solid fa-microphone-lines"></i></button>
+                <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
+                <button type="button" id="image-upload-button" class="icon-button" aria-label="Upload Image"><i class="fa-solid fa-camera"></i></button>
                 <button type="submit" id="send-button" class="icon-button" aria-label="Send"><i class="fa-solid fa-paper-plane"></i></button>
             </form>
         </div>
@@ -68,37 +70,31 @@
         document.addEventListener("DOMContentLoaded", () => {
             const chatWindow = document.getElementById("chat-window");
             chatWindow.scrollTop = chatWindow.scrollHeight;
+
             const chatForm = document.getElementById("chat-form");
             const userInput = document.getElementById("user-input");
-            const micButton = document.getElementById("mic-button");
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            let recognition;
+            const imageUploadButton = document.getElementById("image-upload-button");
+            const imageUploadInput = document.getElementById("image-upload-input");
 
-            if (SpeechRecognition) {
-                recognition = new SpeechRecognition();
-                recognition.continuous = false;
-                recognition.lang = 'en-US';
-                micButton.addEventListener("click", () => {
-                    micButton.classList.contains('is-listening') ? recognition.stop() : recognition.start();
-                });
-                recognition.onstart = () => micButton.classList.add("is-listening");
-                recognition.onend = () => micButton.classList.remove("is-listening");
-                recognition.onerror = (event) => console.error("Speech recognition error:", event.error);
-                recognition.onresult = (event) => {
-                    userInput.value = event.results[0][0].transcript;
-                    document.getElementById("send-button").click();
-                };
-            } else {
-                if(micButton) micButton.style.display = 'none';
-            }
-
+            // Text message submission
             chatForm.addEventListener("submit", (event) => {
                 event.preventDefault();
                 const userMessage = userInput.value.trim();
-                if (userMessage) processUserMessage(userMessage);
+                if (userMessage) processTextMessage(userMessage);
             });
-            
-            async function processUserMessage(message) {
+
+            // Trigger file input when camera button is clicked
+            imageUploadButton.addEventListener("click", () => imageUploadInput.click());
+
+            // Handle image file selection
+            imageUploadInput.addEventListener("change", (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    processImageMessage(file);
+                }
+            });
+
+            async function processTextMessage(message) {
                 appendMessage(message, "user");
                 userInput.value = "";
                 showTypingIndicator();
@@ -108,13 +104,38 @@
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ message: message }),
                     });
-                    if (!response.ok) throw new Error("Network response not ok.");
                     const data = await response.json();
                     removeTypingIndicator();
                     appendMessage(data.response, "bot");
                 } catch (error) {
                     removeTypingIndicator();
-                    appendMessage("I apologize, an error occurred.", "bot");
+                    appendMessage("I apologize, a text-based error occurred.", "bot");
+                }
+            }
+            
+            async function processImageMessage(file) {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const previewHtml = `<p>Identifying this image...</p><img src="${reader.result}" alt="Image preview" class="image-preview">`;
+                    appendMessage(previewHtml, "user");
+                };
+
+                const formData = new FormData();
+                formData.append('image', file);
+                showTypingIndicator();
+
+                try {
+                    const response = await fetch("{{ url_for('identify_image') }}", {
+                        method: "POST",
+                        body: formData, // No 'Content-Type' header needed for FormData
+                    });
+                    const data = await response.json();
+                    removeTypingIndicator();
+                    appendMessage(data.response || data.error, "bot");
+                } catch (error) {
+                    removeTypingIndicator();
+                    appendMessage("I apologize, an error occurred during image processing.", "bot");
                 }
             }
 
@@ -128,17 +149,14 @@
             }
 
             function showTypingIndicator() {
+                if(document.getElementById('typing-indicator')) return;
                 const indicatorHTML = `<div class="message bot-message" id="typing-indicator"><div class="avatar">🕉️</div><div class="message-content">...</div></div>`;
-                if(!document.getElementById('typing-indicator')) chatWindow.insertAdjacentHTML('beforeend', indicatorHTML);
+                chatWindow.insertAdjacentHTML('beforeend', indicatorHTML);
                 chatWindow.scrollTop = chatWindow.scrollHeight;
             }
 
             function removeTypingIndicator() {
                 document.getElementById("typing-indicator")?.remove();
-            }
-
-            if (chatWindow.children.length === 0) {
-                 appendMessage("Jai Sri Ram! I am a humble sevak. How may I guide you today?", "bot");
             }
         });
     </script>
